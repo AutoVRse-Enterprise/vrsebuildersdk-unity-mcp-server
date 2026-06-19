@@ -206,7 +206,7 @@ const CORE_TOOLS = new Set([
   "unity_list_infinity_tools",
   "unity_infinity_tool",
   "vrse_list_rotator_tools",
-  "vrse_rotator_dispatch",
+  "vrse_rotator_create_from_prefab",
 ]);
 
 /**
@@ -526,7 +526,7 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTool
   };
 
   const rotatorTool = {
-    name: "vrse_rotator_dispatch",
+    name: "vrse_rotator_create_from_prefab",
     description:
       "Execute a rotator tool by name. Use vrse_list_rotator_tools " +
       "to discover available tools. Provides access to mesh analysis for hinge detection " +

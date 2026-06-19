@@ -12,13 +12,22 @@ export const vrseCreateRotatorFromMeshTools = [
       "Returns JSON with ALL scene instances matching the name (use instanceId to pick the right one — multiple objects often share names). " +
       "Each instance includes: root mesh, all children with names/bounds/positions/vertices/rotations.\n\n" +
 
+      "NAME MATCHING IS FUZZY: matching is tiered (exact → normalized → substring), so an approximate name " +
+      "('Switch On Off') still resolves the real object ('Switch_ON_OFF_Machine'). The result reports a top-level " +
+      "\"matchType\" and a per-instance \"matchType\" of \"exact\" or \"fuzzy\".\n" +
+      "  → If matchType is \"fuzzy\", you MUST confirm the resolved name with the user before calling create " +
+      "(e.g. \"I found 'Switch_ON_OFF_Machine' — use that?\"). Only proceed once they confirm.\n" +
+      "  → If matchCount is 0, tell the user the object wasn't found and ask for the correct name.\n\n" +
+
       "AFTER getting the data, you MUST reason about it before calling vrse_rotator_create_from_prefab. Here's how:\n\n" +
 
-      "1. IDENTIFY THE OBJECT: What real-world thing is this? (telephone box, cabinet, lever, valve, etc.)\n" +
+      "1. IDENTIFY THE OBJECT: What real-world thing is this? (telephone box, cabinet, lever, valve, dial, door, etc.)\n" +
       "2. CLASSIFY THE ROOT — this decides the template slot:\n" +
-      "   - rootHasMesh = false → root is an empty PARENT WRAPPER (e.g. a Cabinet transform with no geometry). Pass useRootAsParent: true to Create. The PivotRotateLimiter will be placed inside it.\n" +
-      "   - rootHasMesh = true → root is the STATIC HOUSING. Its mesh goes into Container as usual. Pass useRootAsParent: false.\n" +
-      "3. PICK THE RIGHT INSTANCE: If matchCount > 1, choose the instance with ALL expected children (e.g., an EmergencyTelephone should have both Cap and Phone children, not just Phone).\n" +
+      "   - rootHasMesh = false → root is an empty PARENT WRAPPER. Pass useRootAsParent: true. PivotRotateLimiter lands inside it.\n" +
+      "   - rootHasMesh = true AND childCount > 0 → root is the STATIC HOUSING. Children are the rotating/static parts.\n" +
+      "   - rootHasMesh = true AND childCount = 0 → SOLO ROTATING MESH (dial, knob, door leaf with no sub-meshes).\n" +
+      "     Pass rotatingMeshName: '' and rootMeshIsStatic: false. The root itself becomes the Grabbable mesh.\n" +
+      "3. PICK THE RIGHT INSTANCE: If matchCount > 1, choose the instance with ALL expected children.\n" +
       "4. CLASSIFY EVERY MESH — nothing gets discarded, ever. Three slots:\n" +
       "   - PARENT WRAPPER (useRootAsParent: true): the root itself when it has no mesh.\n" +
       "   - SIBLINGS → staticMeshNames (Container): non-rotating children at the same level as the rotator.\n" +
@@ -27,16 +36,30 @@ export const vrseCreateRotatorFromMeshTools = [
       "     · If a child already has localRotation != (0,0,0), that CONFIRMS it is the rotating part.\n" +
       "   - ROTATOR + ITS CHILDREN → rotatingMeshName (Grabbable): the rotating child and everything in its 'children' array moves with it automatically.\n" +
       "     · Check the rotating child's 'children' array — list them in your reasoning so they're accounted for.\n" +
-      "5. DETERMINE ROTATION AXIS from the object type:\n" +
-      "   - Doors, cabinet doors, gates → Y-axis (vertical hinge, swings horizontally)\n" +
-      "   - Lids, flaps, mailbox doors → X-axis (horizontal hinge, opens up/down)\n" +
-      "   - Dials, valves, wheels, levers → Z-axis (rotates in-plane)\n" +
-      "   - Cross-check: if a child has non-zero localRotation on the chosen axis, it confirms that axis.\n" +
-      "6. THE PIVOT IS THE ROTATING MESH'S WORLD POSITION — no offset calculation needed.\n" +
-      "   The Create tool places the Grabbable (and hence the pivot/hinge) exactly at the rotating mesh's\n" +
-      "   transform origin in world space. Art assets are authored so the mesh origin IS the physical hinge edge.\n" +
-      "   If the boundsCenter offset is very large (mesh centroid is far from origin), that confirms the\n" +
-      "   origin is intentionally at the hinge, not the mesh center — this is correct, do nothing extra.\n" +
+      "5. DETERMINE ROTATION KIND — classify HOW it rotates; the tool derives the exact WORLD axis\n" +
+      "   from geometry. You do NOT pick an axis letter or reason about scene orientation. Set\n" +
+      "   rotationKind:\n" +
+      "   - 'hinge' = rotates about an EDGE: doors, cabinet doors, gates, lids, flaps.\n" +
+      "       The tool uses the hinge edge — from hingeWorldDir if you give one, else the vertical edge.\n" +
+      "   - 'spin' = rotates about its OWN SHAFT / face normal: dials, knobs, valves, wheels.\n" +
+      "       The tool uses the mesh's thinnest axis (the face normal), so a panel-mounted dial spins\n" +
+      "       around the panel's outward normal automatically — no matter how it's oriented.\n" +
+      "   This classification is reliable and orientation-independent. (rotationAxis is now just a\n" +
+      "   fallback used only if the mesh can't be read.)\n" +
+      "6. DETERMINE THE HINGE — give a WORLD DIRECTION, do NOT compute coordinates or name local faces:\n" +
+      "   Create takes 'hingeWorldDir' = a world-space direction pointing from the panel center toward\n" +
+      "   the hinge. The tool excludes the panel's thinnest axis (thickness is never a hinge) and snaps\n" +
+      "   to the width face that best matches your direction. You reason ONLY in world space — never\n" +
+      "   about local mesh axes. (Local face names were ambiguous: a door's width can run along any\n" +
+      "   world axis, so 'left'/'right' often landed on the thin thickness edge.)\n\n" +
+      "   Decide using rootBoundsCenter and the doors' world positions:\n" +
+      "   · rootBoundsCenter has a large offset on a width axis (art origin already at the hinge), OR\n" +
+      "     the object is a DIAL/KNOB/VALVE (spins on its own shaft): OMIT hingeWorldDir → hinge at origin.\n" +
+      "   · rootBoundsCenter ≈ (0,0,0) (origin at panel CENTER): set hingeWorldDir toward the hinge edge.\n" +
+      "       DOUBLE DOOR: away from the other leaf → normalize(thisLeaf.worldPosition − otherLeaf.worldPosition).\n" +
+      "         e.g. DoorLeft at smaller Z, DoorRight at larger Z → DoorLeft {x:0,y:0,z:-1}, DoorRight {x:0,y:0,z:1}.\n" +
+      "       SINGLE DOOR: toward the hinge side (opposite the handle).\n" +
+      "   A coarse direction is fine — thickness-exclusion + best-face snap make it orientation-robust.\n" +
       "7. DETERMINE ANGLE RANGE AND SIGN — this is the step most likely to go wrong:\n" +
       "   The Analyze result now includes worldForward, worldRight, worldUp for each child. Use these\n" +
       "   to determine which way positive rotation swings the door, BEFORE picking min/maxAngle.\n\n" +
@@ -118,10 +141,15 @@ export const vrseCreateRotatorFromMeshTools = [
       "- Always provide instanceId when matchCount > 1 to target the correct object.\n\n" +
 
       "HOW PIVOT/HINGE WORKS:\n" +
-      "The Grabbable is placed at the rotating mesh's world position (its transform origin = physical hinge).\n" +
-      "MetaXRPivotRotateLimiter uses the Grabbable's own position as the pivot — no separate Pivot Transform needed.\n" +
-      "The Grabbable starts at world rotation (0,0,0) so local rotation 0 = rest/closed. The wired OneGrabTransformer\n" +
-      "on the Grabbable component IS the MetaXRPivotRotateLimiter. Do NOT pass pivotX/Y/Z — there are none.\n\n" +
+      "The tool positions a Pivot node at the hinge and wires it to MetaXRPivotRotateLimiter, which captures that\n" +
+      "world position ONCE at Start() and uses it statically — so the pivot never drifts even though the Pivot node\n" +
+      "is a child of the rotating Grabbable.\n\n" +
+      "Set the hinge with 'hingeWorldDir' = a WORLD direction from the panel center toward the hinge. The tool\n" +
+      "excludes the panel's thinnest (thickness) axis and snaps to the width face best matching that direction —\n" +
+      "you do NOT pass coordinates or reason about local axes.\n" +
+      "  · OMIT hingeWorldDir → hinge at the mesh origin (dials, or art authored with origin at the hinge edge)\n" +
+      "  · double door: away from the other leaf, e.g. {x:0,y:0,z:-1} / {x:0,y:0,z:1}\n" +
+      "pivotWorldPosition remains only as an advanced override for irregular geometry.\n\n" +
 
       "Output hierarchy (from the real prefab):\n" +
       "  PivotRotateLimiter_[Name] (root — at hinge world position, identity rotation)\n" +
@@ -160,10 +188,19 @@ export const vrseCreateRotatorFromMeshTools = [
           type: "boolean",
           description: "Almost always true. The root mesh is typically the housing/frame/body that stays fixed. Only false if the entire root object itself is the rotating part (rare).",
         },
+        rotationKind: {
+          type: "string",
+          enum: ["hinge", "spin"],
+          description:
+            "How the object rotates — this is what determines the axis (the tool derives the exact WORLD axis from geometry):\n" +
+            "- 'hinge' = rotates about an EDGE: doors, cabinet doors, gates, lids, flaps. The tool uses the hinge edge (from hingeWorldDir, or the vertical edge for doors).\n" +
+            "- 'spin' = rotates about its OWN SHAFT / face normal: dials, knobs, valves, wheels. The tool uses the mesh's thinnest axis (the face normal).\n" +
+            "Classify by what the object is — this is reliable and orientation-independent. Always set it.",
+        },
         rotationAxis: {
           type: "string",
           enum: ["X", "Y", "Z"],
-          description: "Y = vertical hinge (doors, cabinet doors, gates). X = horizontal hinge (lids, flaps, mailboxes). Z = in-plane rotation (dials, valves, levers). Cross-check with the rotating child's localRotation from analysis.",
+          description: "FALLBACK ONLY — the world axis is derived from geometry + rotationKind. This value is used only if the mesh can't be read. Pass your best guess (usually Y).",
         },
         minAngle: {
           type: "number",
@@ -177,9 +214,34 @@ export const vrseCreateRotatorFromMeshTools = [
           type: "boolean",
           description: "True when the source root is an empty wrapper (rootHasMesh=false from analysis). The new PivotRotateLimiter will be placed inside the source root instead of the QueryObjects hierarchy. Most objects do NOT need this — only set true when rootHasMesh was false.",
         },
+        hingeWorldDir: {
+          type: "object",
+          description:
+            "WORLD-space direction pointing from the panel center toward the hinge. The tool computes the exact hinge itself: it excludes the panel's thinnest axis (a door never hinges on its thickness face) and snaps to the width face whose outward world normal best matches this direction. You do NOT do coordinate math and do NOT reason about local vs world axes — just give a rough outward direction.\n" +
+            "- OMIT entirely for dials/knobs/valves that spin on their own shaft, OR art whose origin is already at the hinge (rootBoundsCenter has a large offset on the hinge axis). Hinge stays at the mesh origin.\n" +
+            "- DOOR: direction from the panel toward its hinge edge. For a DOUBLE DOOR this is the direction AWAY from the other leaf: hingeWorldDir = normalize(thisLeaf.worldPosition − otherLeaf.worldPosition). So if DoorLeft is at smaller Z and DoorRight at larger Z, DoorLeft → {x:0,y:0,z:-1}, DoorRight → {x:0,y:0,z:1}.\n" +
+            "- SINGLE DOOR: point toward the hinge side (opposite the handle).\n" +
+            "A coarse/approximate direction is fine — the thickness-exclusion + best-face snap make it robust to orientation.",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" },
+            z: { type: "number" },
+          },
+          required: ["x", "y", "z"],
+        },
+        pivotWorldPosition: {
+          type: "object",
+          description: "ADVANCED escape hatch — only when hingeWorldDir cannot express the hinge (irregular geometry). Raw world position; overrides hingeWorldDir. Normally omit and use hingeWorldDir instead.",
+          properties: {
+            x: { type: "number" },
+            y: { type: "number" },
+            z: { type: "number" },
+          },
+          required: ["x", "y", "z"],
+        },
         reasoning: {
           type: "string",
-          description: "Your reasoning chain: what the object is → root classification (parent wrapper or static housing) → which part rotates and why → siblings list → children of rotator → axis choice → pivot logic → angle range.",
+          description: "Your reasoning chain: what the object is → root classification → solo mesh or has children → which part rotates → siblings → axis choice → pivot check (is origin at hinge or center?) → pivotWorldPosition calculation if needed → angle range.",
         },
       },
       required: [
@@ -197,17 +259,30 @@ export const vrseCreateRotatorFromMeshTools = [
       staticMeshNames = "",
       rootMeshIsStatic = true,
       rotationAxis,
+      rotationKind = "",
       minAngle,
       maxAngle,
       useRootAsParent = false,
+      hingeWorldDir = null,
+      pivotWorldPosition = null,
       reasoning,
     }) => {
       try {
         const axisIndex = rotationAxis === "X" ? 0 : rotationAxis === "Y" ? 1 : 2;
+        // pivotWorldPosition is an explicit override; hingeWorldDir is the normal path — the C#
+        // tool excludes the thickness face and snaps to the best width edge along this world direction.
+        const pivotParams = pivotWorldPosition
+          ? { overridePivot: true, pivotX: pivotWorldPosition.x, pivotY: pivotWorldPosition.y, pivotZ: pivotWorldPosition.z }
+          : { overridePivot: false, pivotX: 0, pivotY: 0, pivotZ: 0 };
+        const hingeDir = hingeWorldDir
+          ? { hingeDirX: hingeWorldDir.x, hingeDirY: hingeWorldDir.y, hingeDirZ: hingeWorldDir.z }
+          : { hingeDirX: 0, hingeDirY: 0, hingeDirZ: 0 };
         const result = await bridge.sendCommand("vrse/create-rotator-from-mesh/create", {
           instanceId, parentObjectPath, rotatingMeshName,
-          staticMeshNames, rootMeshIsStatic, rotationAxis: axisIndex,
+          staticMeshNames, rootMeshIsStatic, rotationAxis: axisIndex, rotationKind,
           minAngle, maxAngle, useRootAsParent,
+          ...hingeDir,
+          ...pivotParams,
         });
         return typeof result === "string" ? result : JSON.stringify(result, null, 2);
       } catch (error) {
