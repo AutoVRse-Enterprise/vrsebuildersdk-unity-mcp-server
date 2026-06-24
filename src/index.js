@@ -35,7 +35,7 @@ import { instanceTools } from "./tools/instance-tools.js";
 import { vrseInteractableTools } from "./tools/vrse-interactable-tools.js";
 import { vrseStoryOrchestrationTools } from "./tools/vrse-story-orchestration-tools.js";
 import { vrseInfinityTools } from "./tools/vrse-infinity-tools.js";
-import { vrseAdvancedTools } from "./tools/vrse-advanced-tools.js";
+import { vrseCreateRotatorFromMeshTools } from "./tools/vrse-create-rotator-from-mesh.js";
 import { vrseParityTools } from "./tools/vrse-parity-tools.js";
 import { vrseSpatialTools } from "./tools/vrse-spatial-tools.js";
 import { splitToolTiers } from "./tool-tiers.js";
@@ -116,7 +116,7 @@ setAgentId(PROCESS_AGENT_ID);
 const { coreTools, metaTools, advancedCount, coreCount } =
   splitToolTiers(editorTools, {
     infinityTools: vrseInfinityTools,
-    advancedVrseTools: vrseAdvancedTools,
+    rotatorTools: vrseCreateRotatorFromMeshTools,
   });
 const ALL_TOOLS = [
   ...instanceTools,

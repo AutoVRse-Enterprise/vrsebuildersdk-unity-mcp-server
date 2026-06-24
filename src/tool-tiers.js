@@ -202,11 +202,11 @@ const CORE_TOOLS = new Set([
   "unity_agents_list",
   "unity_agent_log",
 
-  // Meta-tools for Infinity Workshop & Advanced VRse tools
+  // Meta-tools for Infinity Workshop & Rotator tools
   "unity_list_infinity_tools",
   "unity_infinity_tool",
-  "unity_list_advanced_vrse_tools",
-  "unity_advanced_vrse_tool",
+  "vrse_list_rotator_tools",
+  "vrse_rotator_create_from_prefab",
 ]);
 
 /**
@@ -215,9 +215,9 @@ const CORE_TOOLS = new Set([
  * @param {Array} allEditorTools - All editor tool definitions
  * @param {Object} options - Optional tool arrays for specialized categories
  * @param {Array} options.infinityTools - Infinity Workshop tools (hidden behind meta-tool)
- * @param {Array} options.advancedVrseTools - Advanced VRse mesh/physics tools (hidden behind meta-tool)
+ * @param {Array} options.rotatorTools - Rotator mesh/physics tools (hidden behind meta-tool)
  */
-export function splitToolTiers(allEditorTools, { infinityTools = [], advancedVrseTools = [] } = {}) {
+export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [] } = {}) {
   const core = [];
   const advanced = [];
   const conversions = [];
@@ -503,32 +503,32 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], advancedVrs
     },
   };
 
-  // ─── Advanced VRse meta-tools (mesh analysis, pivot rotate limiter) ───
-  const advancedVrseMap = new Map();
-  for (const t of advancedVrseTools) {
-    advancedVrseMap.set(t.name, t);
+  // ─── Rotator meta-tools (mesh analysis, PivotRotateLimiter creation) ───
+  const rotatorToolMap = new Map();
+  for (const t of rotatorTools) {
+    rotatorToolMap.set(t.name, t);
   }
 
-  const listAdvancedVrseTools = {
-    name: "unity_list_advanced_vrse_tools",
+  const listRotatorTools = {
+    name: "vrse_list_rotator_tools",
     description:
-      "List all available advanced VRse mesh & physics tools. " +
+      "List all available rotator tools (mesh analysis + PivotRotateLimiter creation). " +
       "These are heuristic-based tools for creating physical interactables like hinges, levers, and rotating doors. " +
       "Two-tool AI flow: (1) analyze mesh data, (2) create with AI-determined parameters.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       return JSON.stringify(
-        advancedVrseTools.map((t) => ({ name: t.name, description: t.description })),
+        rotatorTools.map((t) => ({ name: t.name, description: t.description })),
         null,
         2
       );
     },
   };
 
-  const advancedVrseTool = {
-    name: "unity_advanced_vrse_tool",
+  const rotatorTool = {
+    name: "vrse_rotator_create_from_prefab",
     description:
-      "Execute an advanced VRse mesh/physics tool by name. Use unity_list_advanced_vrse_tools " +
+      "Execute a rotator tool by name. Use vrse_list_rotator_tools " +
       "to discover available tools. Provides access to mesh analysis for hinge detection " +
       "and PivotRotateLimiter creation.",
     inputSchema: {
@@ -537,8 +537,8 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], advancedVrs
         tool: {
           type: "string",
           description:
-            'The advanced VRse tool name (e.g. "vrse_analyze_mesh_for_rotation", "vrse_create_pivot_rotate_limiter"). ' +
-            'Use unity_list_advanced_vrse_tools to see available tools.',
+            'The rotator tool name (e.g. "vrse_rotator_analyze_mesh", "vrse_rotator_create_from_prefab"). ' +
+            'Use vrse_list_rotator_tools to see available tools.',
         },
         params: {
           type: "object",
@@ -550,11 +550,11 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], advancedVrs
     },
     handler: async ({ tool, params } = {}) => {
       if (!tool) {
-        return "Error: 'tool' parameter is required. Use unity_list_advanced_vrse_tools to see available tools.";
+        return "Error: 'tool' parameter is required. Use vrse_list_rotator_tools to see available tools.";
       }
-      const target = advancedVrseMap.get(tool);
+      const target = rotatorToolMap.get(tool);
       if (target) return await target.handler(params || {});
-      return `Error: Unknown advanced VRse tool "${tool}". Use unity_list_advanced_vrse_tools to see available tools.`;
+      return `Error: Unknown rotator tool "${tool}". Use vrse_list_rotator_tools to see available tools.`;
     },
   };
 
@@ -562,7 +562,7 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], advancedVrs
     catalogTool, advancedTool,
     conversionTool, listConversionTools,
     listInfinityTools, infinityTool,
-    listAdvancedVrseTools, advancedVrseTool,
+    listRotatorTools, rotatorTool,
   ];
 
   return {
