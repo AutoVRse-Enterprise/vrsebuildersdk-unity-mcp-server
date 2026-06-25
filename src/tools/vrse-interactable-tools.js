@@ -1,10 +1,11 @@
 import * as bridge from "../unity-editor-bridge.js";
 
-async function callConverter(methodName, targetHint, objectPath, reasoning) {
+async function callConverter(methodName, targetHint, objectPath, reasoning, newName = "") {
   const result = await bridge.sendCommand("vrse/interactable_convert", {
     methodName: methodName,
     targetHint: targetHint || "",
-    objectPath: objectPath || ""
+    objectPath: objectPath || "",
+    newName: newName || ""
   });
 
   if (!result || !result.success) {
@@ -85,11 +86,12 @@ export const vrseInteractableTools = [
       properties: {
         targetHint: { type: "string", description: "User text/name describing the target object." },
         objectPath: { type: "string", description: "Explicit hierarchy path override." },
+        newName: { type: "string", description: "Desired name for the placepoint (e.g. 'PlacePoint_Cylinder'). Defaults to PlacePoint_<targetObjectName> if omitted." },
         reasoning: { type: "string" }
       },
       required: []
     },
-    handler: async ({ targetHint = "", objectPath = "", reasoning = "" }) => callConverter("CreatePlacePoint", targetHint, objectPath, reasoning)
+    handler: async ({ targetHint = "", objectPath = "", reasoning = "", newName = "" }) => callConverter("CreatePlacePoint", targetHint, objectPath, reasoning, newName)
   },
   {
     name: "vrse_convert_to_ray_interactable",
