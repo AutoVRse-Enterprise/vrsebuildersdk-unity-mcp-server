@@ -40,6 +40,7 @@ import { vrseCreateButtonFromMeshTools } from "./tools/vrse-create-button-from-m
 import { vrseParityTools } from "./tools/vrse-parity-tools.js";
 import { vrseSpatialTools } from "./tools/vrse-spatial-tools.js";
 import { vrseStoryReportTools } from "./tools/vrse-story-report.js";
+import { vrseGeneralUISetupTools } from "./tools/vrse-general-ui-setup.js";
 import { splitToolTiers } from "./tool-tiers.js";
 import { setAgentId, getProjectContext } from "./unity-editor-bridge.js";
 import {
@@ -132,6 +133,7 @@ const ALL_TOOLS = [
   ...vrseParityTools,
   ...vrseSpatialTools,
   ...vrseStoryReportTools,
+  ...vrseGeneralUISetupTools,
 ];
 debugLog(
   `[MCP] Tool tiers: ${coreCount} core + ${advancedCount} advanced (via unity_advanced_tool) = ${coreCount + advancedCount} total, ${ALL_TOOLS.length} exposed`
