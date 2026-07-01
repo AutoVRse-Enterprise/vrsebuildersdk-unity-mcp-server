@@ -41,6 +41,7 @@ import { vrseParityTools } from "./tools/vrse-parity-tools.js";
 import { vrseSpatialTools } from "./tools/vrse-spatial-tools.js";
 import { vrseStoryReportTools } from "./tools/vrse-story-report.js";
 import { vrseGeneralUISetupTools } from "./tools/vrse-general-ui-setup.js";
+import { vrseStageTools, setSopSampler } from "./tools/vrse-stage-tools.js";
 import { splitToolTiers } from "./tool-tiers.js";
 import { setAgentId, getProjectContext } from "./unity-editor-bridge.js";
 import {
@@ -134,10 +135,17 @@ const ALL_TOOLS = [
   ...vrseSpatialTools,
   ...vrseStoryReportTools,
   ...vrseGeneralUISetupTools,
+  ...vrseStageTools,
 ];
 debugLog(
   `[MCP] Tool tiers: ${coreCount} core + ${advancedCount} advanced (via unity_advanced_tool) = ${coreCount + advancedCount} total, ${ALL_TOOLS.length} exposed`
 );
+
+// ─── Offline (pure-compute) tools ───
+// These do NOT touch the Unity Editor (no bridge call), so they must NOT be gated by
+// instance discovery/selection and should skip project-context auto-injection. They run
+// in any MCP client even with no Unity Editor open.
+const OFFLINE_TOOLS = new Set(["vrse_storyboard_structure", "vrse_parse_storyboard"]);
 
 // ─── Per-Agent Session State ───
 // A SINGLE MCP process serves ALL agents/tasks in the same Claude Desktop session.
@@ -313,6 +321,27 @@ const server = new Server(
   }
 );
 
+// ─── Wire the SOP sampler ───
+// Lets vrse_parse_storyboard run the SOP→storyboard conversion via the CLIENT's own model
+// (MCP sampling), so no API key needs to live in the server. Returns null when the
+// connected client doesn't advertise the `sampling` capability (vrse_parse_storyboard then
+// falls back to a server env key, then to agent-delegation).
+setSopSampler(async ({ system, user, maxTokens = 16000 }) => {
+  const caps = server.getClientCapabilities();
+  if (!caps || !caps.sampling) return null;
+  try {
+    const res = await server.createMessage({
+      messages: [{ role: "user", content: { type: "text", text: user } }],
+      ...(system ? { systemPrompt: system } : {}),
+      maxTokens,
+    });
+    return res && res.content && res.content.type === "text" ? res.content.text : null;
+  } catch (e) {
+    debugLog(`[vrse_parse_storyboard] MCP sampling failed: ${e.message}`);
+    return null;
+  }
+});
+
 // ─── List Tools Handler ───
 // Inject an optional `port` parameter into every unity_* tool schema (except
 // unity_select_instance which already owns it, unity_list_instances which lists
@@ -396,7 +425,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Auto-discover instances on first tool call (unless it's an instance tool itself)
     // Skip auto-discovery when port override is active — the caller already knows where to route.
     let instancePrompt = null;
-    if (!portOverride && name !== "unity_list_instances" && name !== "unity_select_instance") {
+    if (!portOverride && !OFFLINE_TOOLS.has(name) && name !== "unity_list_instances" && name !== "unity_select_instance") {
       instancePrompt = await ensureInstanceDiscovery();
     }
 
@@ -407,6 +436,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     debugLog(`Tool=${name}, portOverride=${portOverride || 'null'}, selectionRequired=${_selReq}, selectedPort=${_selInst?.port || 'null'}, instancePrompt=${instancePrompt ? 'SET' : 'null'}, discoveryDone=${_discoveryDonePerAgent.get(PROCESS_AGENT_ID) || false}`);
     if (
       _selReq &&
+      !OFFLINE_TOOLS.has(name) &&
       !name.startsWith("unity_hub_") &&
       name !== "unity_list_instances" &&
       name !== "unity_select_instance" &&
@@ -444,8 +474,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       contentBlocks.push({ type: "text", text: instancePrompt });
     }
 
-    // Auto-inject project context on the first successful tool call
-    const contextSummary = await getContextSummaryOnce();
+    // Auto-inject project context on the first successful tool call (skip for offline tools)
+    const contextSummary = OFFLINE_TOOLS.has(name) ? null : await getContextSummaryOnce();
     if (contextSummary) {
       contentBlocks.push({ type: "text", text: contextSummary });
     }
