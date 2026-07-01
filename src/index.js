@@ -36,8 +36,11 @@ import { vrseInteractableTools } from "./tools/vrse-interactable-tools.js";
 import { vrseStoryOrchestrationTools } from "./tools/vrse-story-orchestration-tools.js";
 import { vrseInfinityTools } from "./tools/vrse-infinity-tools.js";
 import { vrseCreateRotatorFromMeshTools } from "./tools/vrse-create-rotator-from-mesh.js";
+import { vrseCreateButtonFromMeshTools } from "./tools/vrse-create-button-from-mesh.js";
 import { vrseParityTools } from "./tools/vrse-parity-tools.js";
 import { vrseSpatialTools } from "./tools/vrse-spatial-tools.js";
+import { vrseStoryReportTools } from "./tools/vrse-story-report.js";
+import { vrseGeneralUISetupTools } from "./tools/vrse-general-ui-setup.js";
 import { vrseStageTools, setSopSampler } from "./tools/vrse-stage-tools.js";
 import { splitToolTiers } from "./tool-tiers.js";
 import { setAgentId, getProjectContext } from "./unity-editor-bridge.js";
@@ -118,6 +121,7 @@ const { coreTools, metaTools, advancedCount, coreCount } =
   splitToolTiers(editorTools, {
     infinityTools: vrseInfinityTools,
     rotatorTools: vrseCreateRotatorFromMeshTools,
+    buttonTools: vrseCreateButtonFromMeshTools,
   });
 const ALL_TOOLS = [
   ...instanceTools,
@@ -129,6 +133,8 @@ const ALL_TOOLS = [
   ...vrseStoryOrchestrationTools,
   ...vrseParityTools,
   ...vrseSpatialTools,
+  ...vrseStoryReportTools,
+  ...vrseGeneralUISetupTools,
   ...vrseStageTools,
 ];
 debugLog(

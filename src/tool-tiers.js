@@ -207,6 +207,10 @@ const CORE_TOOLS = new Set([
   "unity_infinity_tool",
   "vrse_list_rotator_tools",
   "vrse_rotator_create_from_prefab",
+
+  // Meta-tools for PhysicalButton (poke button) creation
+  "vrse_list_physicalbutton_tools",
+  "vrse_physicalbutton_dispatch",
 ]);
 
 /**
@@ -217,7 +221,7 @@ const CORE_TOOLS = new Set([
  * @param {Array} options.infinityTools - Infinity Workshop tools (hidden behind meta-tool)
  * @param {Array} options.rotatorTools - Rotator mesh/physics tools (hidden behind meta-tool)
  */
-export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [] } = {}) {
+export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [], buttonTools = [] } = {}) {
   const core = [];
   const advanced = [];
   const conversions = [];
@@ -558,11 +562,67 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTool
     },
   };
 
+  // ─── PhysicalButton meta-tools (convert meshes to poke buttons) ───
+  const buttonMap = new Map();
+  for (const t of buttonTools) {
+    buttonMap.set(t.name, t);
+  }
+
+  const listButtonTools = {
+    name: "vrse_list_physicalbutton_tools",
+    description:
+      "List all available Physical (poke) Button tools for converting scene meshes into pushable buttons. " +
+      "Two-tool AI flow: (1) vrse_button_analyze_mesh to inspect the mesh, (2) vrse_button_create_from_prefab " +
+      "to build the button(s) from the PhysicalButton_Block prefab. Call this first to discover names + schemas, " +
+      "then run them via vrse_physicalbutton_dispatch.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      return JSON.stringify(
+        buttonTools.map((t) => ({ name: t.name, description: t.description })),
+        null,
+        2
+      );
+    },
+  };
+
+  const buttonDispatch = {
+    name: "vrse_physicalbutton_dispatch",
+    description:
+      "Execute a Physical Button tool by name. Use vrse_list_physicalbutton_tools to discover available tools " +
+      "and their parameters (vrse_button_analyze_mesh, vrse_button_create_from_prefab).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description:
+            'The button tool name (e.g. "vrse_button_analyze_mesh", "vrse_button_create_from_prefab"). ' +
+            "Use vrse_list_physicalbutton_tools to see available tools.",
+        },
+        params: {
+          type: "object",
+          description: "Parameters to pass to the tool.",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params } = {}) => {
+      if (!tool) {
+        return "Error: 'tool' parameter is required. Use vrse_list_physicalbutton_tools to see available tools.";
+      }
+      const target = buttonMap.get(tool);
+      if (target) return await target.handler(params || {});
+      return `Error: Unknown button tool "${tool}". Use vrse_list_physicalbutton_tools to see available tools.`;
+    },
+  };
+
   const metaTools = [
     catalogTool, advancedTool,
     conversionTool, listConversionTools,
     listInfinityTools, infinityTool,
     listRotatorTools, rotatorTool,
+    listButtonTools, buttonDispatch,
   ];
 
   return {
