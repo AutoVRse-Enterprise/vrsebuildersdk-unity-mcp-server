@@ -11,6 +11,10 @@ truth is `skills/`; it is mirrored into `.claude/skills/`, `.cursor/skills/`, an
 `.agents/skills/` so Claude Code, Cursor, Codex, and OpenCode all discover the same skills
 natively — no setup required after cloning.
 
+Mirrors are committed to git so that `git pull` delivers updated skills immediately. A
+`prepare` hook in `package.json` also runs the sync on every `npm install` as a safety net —
+if mirrors ever drift, the next install self-heals them.
+
 - Adding a new skill? Use the `new-skill` skill (`skills/new-skill/SKILL.md`) — it explains
   exactly where skill-creation tools should write files and how to sync them.
 - After editing anything under `skills/`, run `npm run skills:sync` before committing.

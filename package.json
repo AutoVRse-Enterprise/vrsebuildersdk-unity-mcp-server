@@ -11,6 +11,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "pack": "npx @anthropic-ai/mcpb pack . unity-mcp.mcpb && npx @anthropic-ai/mcpb clean unity-mcp.mcpb",
+    "prepare": "node scripts/setup-skills.js",
     "skills:sync": "node scripts/setup-skills.js",
     "skills:reconcile": "node scripts/setup-skills.js --reconcile",
     "skills:check": "node scripts/setup-skills.js --check"

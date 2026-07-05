@@ -131,6 +131,49 @@ Restart Claude Desktop. Done!
 - *"Capture a screenshot of my scene view"*
 - *"Show me the active agent sessions"*
 
+## Agent Skills
+
+This repo ships portable [Agent Skills](https://agentskills.io) that work automatically with
+**Claude Code**, **Cursor**, **Codex**, and **OpenCode** — no extra setup needed.
+
+### For Users
+
+Skills are ready the moment you finish setup. When you run `npm install`, a `prepare` hook
+automatically syncs all skills into the directories each AI tool expects (`.claude/skills/`,
+`.cursor/skills/`, `.agents/skills/`). When you `git pull` updates that include new or
+changed skills, the mirrors are included in the pull — so skills stay current without any
+extra step.
+
+### For Developers
+
+All skills live in **`skills/`** — that is the single source of truth. The mirror directories
+are generated copies; never edit them directly.
+
+```bash
+# 1. Create or edit a skill
+skills/my-new-skill/SKILL.md
+
+# 2. Sync mirrors
+npm run skills:sync
+
+# 3. Commit canonical + mirrors together
+git add skills/ .claude/skills/ .cursor/skills/ .agents/skills/
+git commit -m "feat: add my-new-skill"
+```
+
+To scaffold a new skill the right way, ask your agent to "use the new-skill skill" — it
+knows the layout rules and where to write files.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run skills:sync` | Mirror `skills/` → all tool directories |
+| `npm run skills:reconcile` | Pull any skill created in a mirror back into `skills/`, then sync |
+| `npm run skills:check` | Exit non-zero if mirrors are out of sync (for CI) |
+
+> **Why are mirrors committed to git?** So that `git pull` delivers updated skills
+> immediately — no rebuild step needed. The `prepare` hook acts as a safety net: if mirrors
+> ever drift, the next `npm install` self-heals them.
+
 ## Configuration
 
 | Environment Variable | Default | Description |

@@ -5,6 +5,10 @@ It is mirrored into `.claude/skills/`, `.cursor/skills/`, and `.agents/skills/` 
 `scripts/setup-skills.js` so that Claude Code, Cursor, Codex, and OpenCode all discover the
 same skills natively, without any extra setup from whoever clones this repo.
 
+Mirrors are committed to git so `git pull` delivers updated skills immediately. A `prepare`
+hook in `package.json` also runs the sync on every `npm install` as a safety net — if mirrors
+ever drift, the next install self-heals them.
+
 **Never hand-edit `.claude/skills/`, `.cursor/skills/`, or `.agents/skills/` directly.**
 They are generated and will be overwritten the next time the sync script runs.
 
