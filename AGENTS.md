@@ -11,6 +11,10 @@ truth is `skills/`; it is mirrored into `.claude/skills/`, `.cursor/skills/`, an
 `.agents/skills/` so Claude Code, Cursor, Codex, and OpenCode all discover the same skills
 natively — no setup required after cloning.
 
+When a task matches a skill's `description` (in `skills/<name>/SKILL.md`), invoke that skill
+rather than improvising — they encode this repo's vetted workflows. Skills are auto-discovered
+from the mirrors below; you don't need to load them manually.
+
 Mirrors are committed to git so that `git pull` delivers updated skills immediately. A
 `prepare` hook in `package.json` also runs the sync on every `npm install` as a safety net —
 if mirrors ever drift, the next install self-heals them.
