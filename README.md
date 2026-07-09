@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="icon.png" alt="AnkleBreaker MCP" width="180" />
+  <img src="icon.png" alt="VRseBuilder Unity MCP" width="180" />
 </p>
 
 # Unity MCP Server
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants like Claude full control over **Unity Hub** and **Unity Editor**. Built by [AnkleBreaker Studio](https://github.com/AnkleBreaker-Studio).
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants like Claude full control over **Unity Hub** and **Unity Editor**. Built by [AutoVRse](https://github.com/AutoVRse-Enterprise).
 
 ## Features
 
@@ -60,7 +60,7 @@ Claude / AI Assistant ←→ MCP Server (this repo) ←→ Unity Editor Plugin (
 
 This server communicates with:
 - **Unity Hub** via its CLI (supports both modern `--headless` and legacy `-- --headless` syntax)
-- **Unity Editor** via the companion [unity-mcp-plugin](https://github.com/AnkleBreaker-Studio/unity-mcp-plugin) which runs an HTTP API inside the editor
+- **Unity Editor** via the companion [unity-mcp-plugin](https://github.com/AutoVRse-Enterprise/VRseBuilderSDK-mcp-plugin) which runs an HTTP API inside the editor
 
 ### Two-Tier Tool System
 
@@ -87,13 +87,13 @@ The server automatically discovers all running Unity Editor instances on startup
 
 In Unity: **Window > Package Manager > + > Add package from git URL:**
 ```
-https://github.com/AnkleBreaker-Studio/unity-mcp-plugin.git
+https://github.com/AutoVRse-Enterprise/VRseBuilderSDK-mcp-plugin.git
 ```
 
 ### 2. Install this MCP Server
 
 ```bash
-git clone https://github.com/AnkleBreaker-Studio/unity-mcp-server.git
+git clone https://github.com/AutoVRse-Enterprise/vrsebuildersdk-unity-mcp-server.git
 cd unity-mcp-server
 npm install
 ```
@@ -189,7 +189,7 @@ knows the layout rules and where to write files.
 | `UNITY_RESPONSE_HARD_LIMIT` | `4194304` | Response size hard limit in bytes (truncation) |
 | `UNITY_MCP_DEBUG` | `false` | Enable debug logging for troubleshooting |
 
-The Unity plugin also has its own settings accessible via the Dashboard (`Window > MCP Dashboard`) for port, auto-start, and per-category feature toggles.
+The Unity plugin also has its own settings accessible via the Dashboard (`Window > VRseBuilder Unity MCP`) for port, auto-start, and per-category feature toggles.
 
 ## Optional Package Support
 
@@ -210,7 +210,7 @@ Features for uninstalled packages return helpful messages explaining what to ins
 
 - Node.js 18+
 - Unity Hub (for Hub tools)
-- Unity Editor with [unity-mcp-plugin](https://github.com/AnkleBreaker-Studio/unity-mcp-plugin) installed (for Editor tools)
+- Unity Editor with [unity-mcp-plugin](https://github.com/AutoVRse-Enterprise/VRseBuilderSDK-mcp-plugin) installed (for Editor tools)
 
 ## Troubleshooting
 
@@ -218,92 +218,10 @@ Features for uninstalled packages return helpful messages explaining what to ins
 
 **"Unity Hub not found"** — Update `UNITY_HUB_PATH` in your config to match your installation.
 
-**"Category disabled" errors** — A feature category may be toggled off. Open `Window > MCP Dashboard` in Unity to check category settings.
+**"Category disabled" errors** — A feature category may be toggled off. Open `Window > VRseBuilder Unity MCP` in Unity to check category settings.
 
 **Port conflicts** — Change `UNITY_BRIDGE_PORT` in your Claude config and update the port in Unity's MCP Dashboard settings.
 
-## Why AnkleBreaker Unity MCP?
-
-AnkleBreaker Unity MCP is the most comprehensive MCP integration for Unity, purpose-built to leverage the full power of **Claude Cowork** and other AI assistants. Here's how it compares to alternatives:
-
-### Feature Comparison
-
-| Feature | **AnkleBreaker MCP** | **Bezi** | **Coplay MCP** | **Unity AI** |
-|---------|:-------------------:|:--------:|:--------------:|:------------:|
-| **Total Tools** | **200+** | ~30 | 34 | Limited (built-in) |
-| **Feature Categories** | **30+** | ~5 | ~5 | N/A |
-| **Non-Blocking Editor** | ✅ Full background operation | ❌ Freezes Unity during tasks | ✅ | ✅ |
-| **Open Source** | ✅ AnkleBreaker Open License | ❌ Proprietary | ✅ MIT License | ❌ Proprietary |
-| **Claude Cowork Optimized** | ✅ Two-tier lazy loading | ❌ Not MCP-based | ⚠️ Basic | ❌ Not MCP-based |
-| **Multi-Instance Support** | ✅ Auto-discovery | ❌ | ❌ | ❌ |
-| **Multi-Agent Support** | ✅ Session tracking + queuing | ❌ | ❌ | ❌ |
-| **Unity Hub Control** | ✅ Install editors & modules | ❌ | ❌ | ❌ |
-| **Scene Hierarchy** | ✅ Full tree + pagination | ⚠️ Limited | ⚠️ Basic | ⚠️ Limited |
-| **Physics Tools** | ✅ Raycasts, overlap, settings | ❌ | ❌ | ❌ |
-| **Terrain Tools** | ✅ Full terrain pipeline | ❌ | ❌ | ❌ |
-| **Shader Graph** | ✅ Create, inspect, open | ❌ | ❌ | ❌ |
-| **Profiling & Debugging** | ✅ Profiler + Frame Debugger + Memory | ❌ | ❌ | ⚠️ Basic |
-| **Animation System** | ✅ Controllers, clips, parameters | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic |
-| **NavMesh / Navigation** | ✅ Bake, agents, obstacles | ❌ | ❌ | ❌ |
-| **Particle Systems** | ✅ Full module editing | ❌ | ❌ | ❌ |
-| **MPPM Multiplayer** | ✅ Scenarios, start/stop | ❌ | ❌ | ❌ |
-| **Visual Inspection** | ✅ Scene + Game view capture | ❌ | ⚠️ Limited | ❌ |
-| **Play Mode Resilient** | ✅ Survives domain reload | ❌ | ❌ | N/A |
-| **Port Resilience** | ✅ Identity validation + crash detection | ❌ | ❌ | N/A |
-| **Project Context** | ✅ Custom docs for AI agents | ❌ | ❌ | ⚠️ Built-in only |
-
-### Cost Comparison
-
-> **AnkleBreaker Unity MCP is completely free and open source.** The prices below reflect only the cost of the AI assistant (Claude) itself — the MCP plugin and server are $0.
-
-| Solution | Monthly Cost | What You Get |
-|----------|:----------:|--------------| 
-| **AnkleBreaker MCP (free) + Claude Pro** | **$20/mo** | 200+ tools, full Unity control, open source — MCP is free, price is Claude only |
-| **AnkleBreaker MCP (free) + Claude Max 5x** | **$100/mo** | Same + 5x usage for heavy workflows — MCP is free, price is Claude only |
-| **AnkleBreaker MCP (free) + Claude Max 20x** | **$200/mo** | Same + 20x usage for teams/studios — MCP is free, price is Claude only |
-| **Bezi Pro** | $20/mo | ~30 tools, 800 credits/mo, freezes Unity |
-| **Bezi Advanced** | $60/mo | ~30 tools, 2400 credits/mo, freezes Unity |
-| **Bezi Team** | $200/mo | 3 seats, 8000 credits, still freezes Unity |
-| **Unity AI** | Included with Unity Pro/Enterprise | Limited AI tools, Unity Points system, no MCP |
-| **Coplay MCP** | Free (beta) | 34 tools, basic categories |
-
-### Key Advantages
-
-**vs. Bezi:**
-Bezi runs as a proprietary Unity plugin with its own credit-based billing — $20–$200/mo on top of your AI subscription. It has historically suffered from freezing the Unity Editor during AI tasks, blocking your workflow. AnkleBreaker MCP is completely free and open source, runs entirely in the background with zero editor impact, and offers 6x more tools — the only cost is your existing Claude subscription.
-
-**vs. Coplay MCP:**
-Coplay MCP provides 34 tools across ~5 categories. AnkleBreaker MCP delivers 200+ tools across 30+ categories including advanced features like physics raycasts, terrain editing, shader graph management, profiling, NavMesh, particle systems, and MPPM multiplayer — none of which exist in Coplay. Our two-tier lazy loading system is specifically optimized for Claude Cowork's tool limits.
-
-**vs. Unity AI:**
-Unity AI (successor to Muse) is built into Unity 6.2+ but limited to Unity's own AI models and a credit-based "Unity Points" system. It cannot be used with Claude or any external AI assistant, has no MCP support, and offers a fraction of the automation capabilities. AnkleBreaker MCP works with any MCP-compatible AI while giving you full control over which AI models you use.
-
-## Support the Project
-
-If Unity MCP helps your workflow, consider supporting its development! Your support helps fund new features, bug fixes, documentation, and more open-source game dev tools.
-
-<a href="https://github.com/sponsors/AnkleBreaker-Studio">
-  <img src="https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=github&style=for-the-badge" alt="GitHub Sponsors" />
-</a>
-<a href="https://www.patreon.com/AnkleBreakerStudio">
-  <img src="https://img.shields.io/badge/Support-Patreon-f96854?logo=patreon&style=for-the-badge" alt="Patreon" />
-</a>
-
-**Sponsor tiers include priority feature requests** — your ideas get bumped up the roadmap! Check out the tiers on [GitHub Sponsors](https://github.com/sponsors/AnkleBreaker-Studio) or [Patreon](https://www.patreon.com/AnkleBreakerStudio).
-
-## What's New in v2.26.0
-
-- **Compilation error detection** — New `unity_get_compilation_errors` tool retrieves C# compilation errors and warnings directly from Unity's `CompilationPipeline` API. Unlike `unity_console_log`, this is independent of the console log buffer — not affected by console clear, Play Mode log flooding, or buffer overflow. Supports filtering by severity (`error`, `warning`, `all`) and count limit. Registered as a core tool (always directly accessible, not behind `unity_advanced_tool`).
-
-## What's New in v2.25.0
-
-- **Parallel-safe instance routing** — When multiple AI agents (e.g. Claude Cowork tasks) share the same MCP process, each agent can now include a `port` parameter in every `unity_*` tool call to guarantee routing to the correct Unity Editor instance. This prevents cross-agent contamination where one task's `unity_select_instance` could redirect another task's commands to the wrong project.
-- **Per-request port override** — A new stateless routing mechanism bypasses the shared per-agent state entirely. The `port` parameter is extracted by middleware before the tool handler runs, used for routing, then stripped from the args. This is safe because MCP stdio transport processes requests sequentially.
-- **Schema injection** — The optional `port` parameter is automatically injected into every `unity_*` tool schema (except `unity_list_instances`, `unity_select_instance`, and `unity_hub_*`), so AI assistants see it as a legitimate parameter and pass it consistently.
-- **Enhanced select_instance response** — `unity_select_instance` now returns explicit routing instructions telling the AI to include `port` in all subsequent calls.
-
 ## License
 
-AnkleBreaker Open License v1.0 — see [LICENSE](LICENSE)
-
-This license requires: (1) including the copyright notice, (2) displaying **"Made with AnkleBreaker MCP"** (or "Powered by AnkleBreaker MCP") attribution in any product built with it (personal/educational use is exempt), and (3) **reselling the tool is forbidden** — you may not sell, sublicense, or commercially distribute this software or derivatives of it. See the full [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE).

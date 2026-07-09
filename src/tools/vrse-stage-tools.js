@@ -10,8 +10,8 @@
 // and returns the interpretive GAPS the agent must resolve (untyped objects, missing
 // sources, bad references). Logic ported from console/lib/storyboard-parser.ts.
 
-import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import * as bridge from "../unity-editor-bridge.js";
 
@@ -1351,8 +1351,10 @@ const ACTION_EMITTERS = {
     if (!a.text) ctx.warnings.push({ kind: "EMPTY_VOICEOVER", detail: "VoiceOver action has empty text." });
     return _act("VoiceOver", "", "Play", _data({ text: a.text, waitForCompletion: a.wait ?? true }));
   },
-  Spawn: (a) => _act("Objects", a.target, "Spawn"),
-  Despawn: (a) => _act("Objects", a.target, "Despawn"),
+  // Empty target → an empty-Query Objects node, which renders as a "pink"/placeholder object in scene.
+  // Drop it and warn rather than emit the broken node (field-confirmed pink-object bug).
+  Spawn: (a, ctx) => { if (!a.target) { ctx.warnings.push({ kind: "EMPTY_SPAWN", detail: "Spawn has no target — dropped (an empty-Query Objects node renders as a 'pink'/placeholder object)." }); return []; } return _act("Objects", a.target, "Spawn"); },
+  Despawn: (a, ctx) => { if (!a.target) { ctx.warnings.push({ kind: "EMPTY_DESPAWN", detail: "Despawn has no target — dropped (empty-Query Objects node)." }); return []; } return _act("Objects", a.target, "Despawn"); },
   Highlight: function highlight(a, ctx) {
     const target = a.target;
     if (Array.isArray(target)) return target.map((t) => highlight({ ...a, target: t }, ctx));
@@ -1360,15 +1362,16 @@ const ACTION_EMITTERS = {
       const d = { Outline: { setActive: true } };
       if ("color" in a) d.Outline.outlineColor = a.color;
       if ("width" in a) d.Outline.outlineWidth = a.width;
+      d.Highlighter = { setActive: true }; // glow sub-component — without it the object doesn't visibly highlight (field-confirmed)
       if ("label" in a) d.Label = { setActive: true, labelText: a.label };
       return _act("MetaLayerAction", target, "Edit", _data(d));
     }
-    return _act("MetaLayerAction", target, "SetActive", _data({ Outline: true }));
+    return _act("MetaLayerAction", target, "SetActive", _data({ Outline: true, Highlighter: true }));
   },
   Unhighlight: function unhighlight(a, ctx) {
     const target = a.target;
     if (Array.isArray(target)) return target.map((t) => unhighlight({ ...a, target: t }, ctx));
-    return _act("MetaLayerAction", target, "SetActive", _data({ Outline: false }));
+    return _act("MetaLayerAction", target, "SetActive", _data({ Outline: false, Highlighter: false, Label: false }));
   },
   EnableGrab: (a) => _act("Objects", a.target, "SetComponentProperty", _data({ component: "Grabbable", property: "isGrabbable", propertyValue: "true" })),
   DisableGrab: (a) => _act("Objects", a.target, "SetComponentProperty", _data({ component: "Grabbable", property: "isGrabbable", propertyValue: "false" })),
@@ -1400,14 +1403,17 @@ const ACTION_EMITTERS = {
 const TRIGGER_EMITTERS = {
   Grab: (t) => _act("GrabbableTrigger", t.target, "Grab", _data({ handOption: t.hand ?? "Any", targetRoleSetId: t.targetRoleSetId ?? 0 }), 1),
   Release: (t) => _act("GrabbableTrigger", t.target, "Release", _data({ handOption: t.hand ?? "Any" }), 1),
-  Touch: (t) => _act("HandTouchTrigger", t.target, "Touch", "", 1),
+  // DEVIATION from build_story.py (which emits Data:"" here): the runtime needs a non-empty
+  // {handOption,targetRoleSetId} payload or the touch never registers (field-confirmed bug).
+  Touch: (t) => _act("HandTouchTrigger", t.target, "Touch", _data({ handOption: t.hand ?? "Any", targetRoleSetId: t.targetRoleSetId ?? 0 }), 1),
   Place: (t, ctx) => {
     const grab = t.grabbable; const gid = _need(ctx, grab, "Place trigger");
     const d = { grabbableName: `${grab}#$${gid}` };
     if (t.disableGrabOnPlace) d.disableGrabOnPlace = true;
     return _act("PlacePointTrigger", t.target, "Place", _data(d), 1);
   },
-  Button: (t) => _act("UIButtonTrigger", t.target, "OnClick", "", 1),
+  // Non-empty Data (like Touch) + honors the [op1]/[op2] role modifier the old emitter dropped.
+  Button: (t) => _act("UIButtonTrigger", t.target, "OnClick", _data({ targetRoleSetId: t.targetRoleSetId ?? 0 }), 1),
   Collision: (t, ctx) => {
     const other = t.other ?? "Player";
     let otherStr;
@@ -1532,6 +1538,7 @@ const GENERATE_STORY_TOOL = {
       save: { type: "boolean", description: "Save the story to its file after applying (default true)." },
       validate: { type: "boolean", description: "Run vrse/story-validate after applying and fold the result into the report (default false)." },
       vo: { type: "boolean", description: "After applying, generate VoiceOver audio (vrse/story-generate-vo). Default false — narration stays 'pending' until generated." },
+      applyVia: { type: "string", enum: ["auto", "inline", "file"], description: "How to apply: 'auto' (default — inline for small stories, file for large), 'inline' (vrse/story-apply-json), or 'file' (write to a temp file and vrse/story-apply-file — avoids the inline payload size limit on big stories)." },
       storyCreatorName: { type: "string", description: "Optional StoryCreator GameObject name (if multiple exist)." },
       port: { type: "number", description: "Target Unity instance port (omit to use the selected instance)." },
     },
@@ -1556,12 +1563,24 @@ const GENERATE_STORY_TOOL = {
       const report = buildStoryReport(momentTable, map, { duplicates, vo });
       if (report.halt || dryRun) return JSON.stringify({ ...report, dryRun: !!dryRun }, null, 2);
 
-      // 3. Apply.
-      const applyResp = unwrap(await bridge.sendCommand("vrse/story-apply-json", { json: report.produced.storyJson, storyCreatorName, port: args.port }));
-      if (!applyResp || applyResp.error || applyResp.success === false) {
-        return JSON.stringify({ ok: false, halt: true, produced: report.produced, missing: [{ kind: "APPLY_FAILED", detail: (applyResp && applyResp.error) || "vrse/story-apply-json failed" }], next: "Apply failed — ensure a StoryCreator exists in the scene and the plugin is recompiled (json/storyJson fix), then re-run.", stats: report.stats }, null, 2);
+      // 3. Apply. Large stories don't fit the inline `json` arg over the bridge (field-confirmed at ~74KB),
+      //    so write the JSON to a temp file and apply from disk (vrse/story-apply-file); small stories apply
+      //    inline. `applyVia` ('auto'|'inline'|'file') overrides the size heuristic.
+      const storyJson = report.produced.storyJson;
+      const applyVia = (args.applyVia && args.applyVia !== "auto") ? args.applyVia : (storyJson.length > 24000 ? "file" : "inline");
+      let applyResp;
+      if (applyVia === "file") {
+        const tmpPath = join(tmpdir(), `vrse_story_${String(momentTable.module || "module").replace(/[^\w.-]+/g, "_")}.json`);
+        try { writeFileSync(tmpPath, storyJson, "utf-8"); }
+        catch (e) { return JSON.stringify({ ok: false, halt: true, produced: report.produced, missing: [{ kind: "APPLY_WRITE_FAILED", detail: `Could not write temp story file '${tmpPath}': ${e.message}` }], next: "Check filesystem permissions, or pass applyVia:'inline'.", stats: report.stats }, null, 2); }
+        applyResp = unwrap(await bridge.sendCommand("vrse/story-apply-file", { path: tmpPath, storyCreatorName, port: args.port }));
+      } else {
+        applyResp = unwrap(await bridge.sendCommand("vrse/story-apply-json", { json: storyJson, storyCreatorName, port: args.port }));
       }
-      const out = { ...report, applied: { storyCreator: applyResp.storyCreator, chapterCount: applyResp.chapterCount } };
+      if (!applyResp || applyResp.error || applyResp.success === false) {
+        return JSON.stringify({ ok: false, halt: true, produced: report.produced, missing: [{ kind: "APPLY_FAILED", detail: (applyResp && applyResp.error) || `vrse/story-apply-${applyVia === "file" ? "file" : "json"} failed` }], next: "Apply failed — ensure a StoryCreator exists in the scene and the plugin is recompiled (vrse/story-apply-file route), then re-run.", stats: report.stats }, null, 2);
+      }
+      const out = { ...report, applied: { storyCreator: applyResp.storyCreator, chapterCount: applyResp.chapterCount, via: applyVia } };
 
       // 4. Save BEFORE any later mutation (so StoryVersioning has a file to back up next time).
       if (save) {

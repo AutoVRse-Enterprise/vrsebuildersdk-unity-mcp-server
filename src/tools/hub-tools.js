@@ -1,4 +1,4 @@
-// AnkleBreaker Unity MCP — Tool definitions for Unity Hub operations
+// VRseBuilder Unity MCP — Tool definitions for Unity Hub operations
 import * as hub from "../unity-hub.js";
 
 export const hubTools = [

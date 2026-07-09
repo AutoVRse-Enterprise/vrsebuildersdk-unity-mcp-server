@@ -1,5 +1,5 @@
 import { debugLog } from './state-persistence.js';
-// AnkleBreaker Unity MCP — Two-tier tool system
+// VRseBuilder Unity MCP — Two-tier tool system
 // Reduces the exposed tool count to avoid overwhelming MCP clients.
 //
 // Core tools: Always exposed as individual MCP tools (~60 tools)

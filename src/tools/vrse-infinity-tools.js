@@ -24,7 +24,7 @@ export const vrseInfinityTools = [
     handler: async () => {
       try {
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("GetStatus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, null);
@@ -90,7 +90,7 @@ export const vrseInfinityTools = [
         const safeTenant = tenantName ? tenantName.replace(/"/g, '\\"') : "";
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("ListAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -151,7 +151,7 @@ export const vrseInfinityTools = [
         const safePolicy = conflictPolicy || "cancel";
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("DownloadAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -174,7 +174,7 @@ export const vrseInfinityTools = [
               await new Promise(resolve => setTimeout(resolve, 2000));
               
               const pollResult = await bridge.executeCode(`
-                var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+                var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
                 var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
                 var method = helperType.GetMethod("PollDownloadJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 return (string)method.Invoke(null, new object[] { "${jobId}" });
@@ -239,7 +239,7 @@ export const vrseInfinityTools = [
     handler: async ({ jobId }) => {
       try {
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("PollDownloadJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { "${jobId}" });
@@ -281,7 +281,7 @@ export const vrseInfinityTools = [
         const safeAssetIdsJson = assetIdsJson.replace(/"/g, '\\"');
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("FindLocalModelPaths", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { "${safeAssetIdsJson}" });
@@ -363,7 +363,7 @@ export const vrseInfinityTools = [
         const scl = scale || { x: 1, y: 1, z: 1 };
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("AddToScene", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -436,7 +436,7 @@ export const vrseInfinityTools = [
         const safeTopK = topK || 1;
 
         const listResult = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("ListAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -474,7 +474,7 @@ export const vrseInfinityTools = [
         const assetIdsJson = JSON.stringify(assetIdsToDownload).replace(/"/g, '\\"');
 
         const downloadResult = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("DownloadAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -532,7 +532,7 @@ export const vrseInfinityTools = [
     handler: async () => {
       try {
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("Initialize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, null);
@@ -550,7 +550,7 @@ export const vrseInfinityTools = [
               await new Promise(resolve => setTimeout(resolve, 2000));
               
               const pollResult = await bridge.executeCode(`
-                var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+                var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
                 var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
                 var method = helperType.GetMethod("PollInitializeJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 return (string)method.Invoke(null, new object[] { "${jobId}" });
@@ -613,7 +613,7 @@ export const vrseInfinityTools = [
     handler: async ({ jobId }) => {
       try {
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("PollInitializeJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { "${jobId}" });
@@ -709,7 +709,7 @@ export const vrseInfinityTools = [
         const safePreset = qualityPreset ? qualityPreset.replace(/"/g, '\\"') : "balanced";
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("PlaceSmart", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -810,7 +810,7 @@ export const vrseInfinityTools = [
         const safePreset = qualityPreset ? qualityPreset.replace(/"/g, '\\"') : "balanced";
 
         const result = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("PlaceSmartBatch", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -899,7 +899,7 @@ export const vrseInfinityTools = [
 
         // Step 1: Check initialization
         const statusResult = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("GetStatus", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, null);
@@ -911,7 +911,7 @@ export const vrseInfinityTools = [
         // Step 2: Initialize if needed
         if (!status.isInitialized || !status.isAuthenticated) {
           const initResult = await bridge.executeCode(`
-            var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+            var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
             var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
             var method = helperType.GetMethod("Initialize", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
             return (string)method.Invoke(null, null);
@@ -926,7 +926,7 @@ export const vrseInfinityTools = [
               await new Promise(resolve => setTimeout(resolve, 2000));
               
               const pollResult = await bridge.executeCode(`
-                var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+                var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
                 var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
                 var method = helperType.GetMethod("PollInitializeJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 return (string)method.Invoke(null, new object[] { "${jobId}" });
@@ -951,7 +951,7 @@ export const vrseInfinityTools = [
 
         // Step 3: List assets to download
         const listResult = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("ListAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -978,7 +978,7 @@ export const vrseInfinityTools = [
 
         // Step 4: Download assets
         const downloadResult = await bridge.executeCode(`
-          var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+          var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
           var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
           var method = helperType.GetMethod("DownloadAssets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
           return (string)method.Invoke(null, new object[] { 
@@ -998,7 +998,7 @@ export const vrseInfinityTools = [
             await new Promise(resolve => setTimeout(resolve, 3000));
             
             const pollResult = await bridge.executeCode(`
-              var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+              var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
               var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
               var method = helperType.GetMethod("PollDownloadJob", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
               return (string)method.Invoke(null, new object[] { "${downloadJobId}" });
@@ -1009,7 +1009,7 @@ export const vrseInfinityTools = [
             if (pollData.status === "complete") {
               // Step 5: Find asset paths
               const pathsResult = await bridge.executeCode(`
-                var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+                var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
                 var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
                 var method = helperType.GetMethod("FindLocalModelPaths", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 return (string)method.Invoke(null, new object[] { "${JSON.stringify(assetIds).replace(/"/g, '\\"')}" });
@@ -1030,7 +1030,7 @@ export const vrseInfinityTools = [
               const assetPathsJsonEscaped = JSON.stringify(assetPaths).replace(/"/g, '\\"');
 
               const placeResult = await bridge.executeCode(`
-                var assembly = System.Reflection.Assembly.Load("AnkleBreaker.UnityMCP.Editor");
+                var assembly = System.Reflection.Assembly.Load("VRseBuilder.UnityMCP.Editor");
                 var helperType = assembly.GetType("UnityMCP.Editor.MCPInfinityHelper");
                 var method = helperType.GetMethod("PlaceSmartBatch", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 return (string)method.Invoke(null, new object[] { 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// AnkleBreaker Unity MCP Server — Main entry point
+// VRseBuilder Unity MCP Server — Main entry point
 // Provides tools for Unity Hub management and Unity Editor control via MCP protocol
 //
 // Multi-agent support:
@@ -180,7 +180,7 @@ async function getContextSummaryOnce() {
     }
 
     let summary =
-      "=== PROJECT CONTEXT (auto-provided by AB Unity MCP) ===\n\n";
+      "=== PROJECT CONTEXT (auto-provided by VRseBuilder Unity MCP) ===\n\n";
     for (const entry of _contextCache.categories) {
       summary += `--- ${entry.category} ---\n`;
       // Truncate very long files for auto-inject
