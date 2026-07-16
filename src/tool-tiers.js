@@ -221,7 +221,7 @@ const CORE_TOOLS = new Set([
  * @param {Array} options.infinityTools - Infinity Workshop tools (hidden behind meta-tool)
  * @param {Array} options.rotatorTools - Rotator mesh/physics tools (hidden behind meta-tool)
  */
-export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [], buttonTools = [] } = {}) {
+export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [], buttonTools = [], storyTools = [] } = {}) {
   const core = [];
   const advanced = [];
   const conversions = [];
@@ -617,12 +617,52 @@ export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTool
     },
   };
 
+  // ─── Story meta-tools (hide the 29 granular story tools behind a dispatcher) ───
+  const storyMap = new Map();
+  for (const t of storyTools) storyMap.set(t.name, t);
+
+  const listStoryTools = {
+    name: "vrse_list_story_tools",
+    description:
+      "List the granular story-authoring tools (add/remove chapter·moment, add/update/remove/move/duplicate " +
+      "nodes, trigger sets, weightage, raw apply/patch/undo, VO, validate, read/info/defaults/templates/objects). " +
+      "These are hidden from the main tool list and executed via vrse_story_tool. Prefer the consolidated tools " +
+      "(vrse_story_inspect / vrse_story_edit / vrse_story_apply) for most story work.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () =>
+      JSON.stringify(storyTools.map((t) => ({ name: t.name, description: t.description })), null, 2),
+  };
+
+  const storyTool = {
+    name: "vrse_story_tool",
+    description:
+      "Execute a granular story tool by name (the pre-consolidation unity_vrse_story_* / vrse_*_story_* set). " +
+      "Use vrse_list_story_tools to discover names + parameters. Prefer vrse_story_inspect / vrse_story_edit / " +
+      "vrse_story_apply unless you specifically need one granular operation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: { type: "string", description: 'The story tool name to execute (e.g. "unity_vrse_story_add_action").' },
+        params: { type: "object", description: "Parameters to pass to the tool.", additionalProperties: true },
+        port: { type: "number", description: "Target Unity instance port (forwarded to the dispatched tool)." },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params, port } = {}) => {
+      if (!tool) return "Error: 'tool' parameter is required. Use vrse_list_story_tools to see available tools.";
+      const target = storyMap.get(tool);
+      if (target) return await target.handler({ ...(params || {}), ...(port !== undefined ? { port } : {}) });
+      return `Error: Unknown story tool "${tool}". Use vrse_list_story_tools to see available tools.`;
+    },
+  };
+
   const metaTools = [
     catalogTool, advancedTool,
     conversionTool, listConversionTools,
     listInfinityTools, infinityTool,
     listRotatorTools, rotatorTool,
     listButtonTools, buttonDispatch,
+    listStoryTools, storyTool,
   ];
 
   return {

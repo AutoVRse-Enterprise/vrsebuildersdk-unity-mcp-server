@@ -34,6 +34,7 @@ import { contextTools } from "./tools/context-tools.js";
 import { instanceTools } from "./tools/instance-tools.js";
 import { vrseInteractableTools } from "./tools/vrse-interactable-tools.js";
 import { vrseStoryOrchestrationTools } from "./tools/vrse-story-orchestration-tools.js";
+import { vrseStoryConsolidatedTools } from "./tools/vrse-story-tools.js";
 import { vrseInfinityTools } from "./tools/vrse-infinity-tools.js";
 import { vrseCreateRotatorFromMeshTools } from "./tools/vrse-create-rotator-from-mesh.js";
 import { vrseCreateButtonFromMeshTools } from "./tools/vrse-create-button-from-mesh.js";
@@ -122,6 +123,7 @@ const { coreTools, metaTools, advancedCount, coreCount } =
     infinityTools: vrseInfinityTools,
     rotatorTools: vrseCreateRotatorFromMeshTools,
     buttonTools: vrseCreateButtonFromMeshTools,
+    storyTools: vrseStoryOrchestrationTools,
   });
 const ALL_TOOLS = [
   ...instanceTools,
@@ -130,7 +132,7 @@ const ALL_TOOLS = [
   ...metaTools,
   ...contextTools,
   ...vrseInteractableTools,
-  ...vrseStoryOrchestrationTools,
+  ...vrseStoryConsolidatedTools,
   ...vrseParityTools,
   ...vrseSpatialTools,
   ...vrseStoryReportTools,

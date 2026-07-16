@@ -1890,3 +1890,21 @@ export const vrseStageTools = [
   GENERATE_STORY_TOOL,
   TRANSLATE_STORYBOARD_TOOL,
 ];
+
+// ─── Shared with the consolidated story tools ────────────────────────────────
+// Re-exported so src/tools/vrse-story-edit-lib.js (the read-modify-write editor)
+// and vrse_story_apply can reuse the SAME emitter model + spec→JSON generator —
+// authoring, editing, and full-build generation all speak one node vocabulary.
+export {
+  _act,
+  _data,
+  _emitAction,
+  _emitActions,
+  _emitTrigger,
+  _emitSet,
+  _buildMoment,
+  _buildStory,
+  ACTION_EMITTERS,
+  TRIGGER_EMITTERS,
+  GENERATE_STORY_TOOL,
+};
