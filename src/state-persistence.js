@@ -1,4 +1,4 @@
-// AnkleBreaker Unity MCP — File-based State Persistence
+// VRseBuilder Unity MCP — File-based State Persistence
 // Persists critical session state (selected instance, discovery flags) to disk
 // so it survives MCP server process restarts by the host (Claude Desktop).
 //
@@ -91,7 +91,7 @@ export function debugLog(message) {
     mkdirSync(STATE_DIR, { recursive: true });
     appendFileSync(DEBUG_LOG, `[${ts}] [PID:${pid}] ${message}\n`);
   } catch {
-    // Last-resort: try console.error
-    console.error(`[MCP Debug] ${message}`);
+    // Last-resort: console log disabled to prevent stdout corruption in VRseBuilder Unity MCP
+    // console.error(`[MCP Debug] ${message}`);
   }
 }

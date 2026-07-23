@@ -3,6 +3,7 @@
 // Supports both queue mode (async ticket-based) and legacy sync mode
 import { CONFIG } from "./config.js";
 import { getActiveBridgeUrl } from "./instance-discovery.js";
+import { debugLog } from "./state-persistence.js";
 
 // Dynamic bridge URL â€” resolved per-call based on selected instance
 function getBridgeUrl() {
@@ -205,7 +206,7 @@ async function sendCommandLegacyMode(command, params = {}) {
       // Transient server error â€” retry
       if (isTransientError(null, response) && attempt < MAX_RETRIES) {
         const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-        console.error(
+        debugLog(
           `[MCP Bridge] HTTP ${response.status} on ${command}, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES})...`
         );
         await sleep(delay);
@@ -221,7 +222,7 @@ async function sendCommandLegacyMode(command, params = {}) {
 
       // If we retried, log that we recovered
       if (attempt > 0) {
-        console.error(
+        debugLog(
           `[MCP Bridge] Recovered after ${attempt} retries for ${command}`
         );
       }
@@ -234,7 +235,7 @@ async function sendCommandLegacyMode(command, params = {}) {
       // Transient connection error â€” retry with backoff
       if (isTransientError(error, null) && attempt < MAX_RETRIES) {
         const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-        console.error(
+        debugLog(
           `[MCP Bridge] ${error.code || error.name || "Error"} on ${command}, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES})...`
         );
         await sleep(delay);
@@ -281,7 +282,7 @@ export async function sendCommand(command, params = {}) {
           const ticketData = await submitToQueue(command, bodyString);
           const ticketId = ticketData.ticketId;
 
-          console.debug(`[MCP Bridge] Submitted ${command} to queue, ticket: ${ticketId}`);
+          debugLog(`[MCP Bridge] Submitted ${command} to queue, ticket: ${ticketId}`);
 
           // Poll for completion
           const result = await pollQueueStatus(ticketId);
@@ -296,7 +297,7 @@ export async function sendCommand(command, params = {}) {
           // Check if it's a transient error worth retrying
           if (isTransientError(submitError, null) && attempt < MAX_RETRIES) {
             const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-            console.error(
+            debugLog(
               `[MCP Bridge] Error submitting to queue: ${submitError.message}, retrying in ${delay}ms (${attempt + 1}/${MAX_RETRIES})...`
             );
             await sleep(delay);
@@ -305,7 +306,7 @@ export async function sendCommand(command, params = {}) {
 
           // Check if it's a 404 (queue not supported) â€” match "HTTP 404" or raw status code
           if (submitError.status === 404 || (submitError.message && /HTTP\s*404/.test(submitError.message))) {
-            console.warn(
+            debugLog(
               `[MCP Bridge] Queue mode not supported (HTTP 404), falling back to legacy sync mode`
             );
             _queueModeDetermined = true;
@@ -320,7 +321,7 @@ export async function sendCommand(command, params = {}) {
 
       // If we get here, queue submit failed after retries
       if (submitLastError) {
-        console.warn(
+        debugLog(
           `[MCP Bridge] Queue mode failed after retries, falling back to legacy sync mode: ${submitLastError.message}`
         );
         _queueModeDetermined = true;
@@ -328,7 +329,7 @@ export async function sendCommand(command, params = {}) {
         return sendCommandLegacyMode(command, params);
       }
     } catch (error) {
-      console.warn(
+      debugLog(
         `[MCP Bridge] Unexpected error in queue mode, falling back to legacy: ${error.message}`
       );
       _queueModeDetermined = true;
@@ -978,175 +979,7 @@ export async function takeMemorySnapshot(params) {
   return sendCommand("profiler/memory-snapshot", params);
 }
 
-// â”€â”€â”€ Shader Graph â”€â”€â”€
-
-export async function getShaderGraphStatus(params) {
-  return sendCommand("shadergraph/status", params);
-}
-
-export async function listShaders(params) {
-  return sendCommand("shadergraph/list-shaders", params);
-}
-
-export async function listShaderGraphs(params) {
-  return sendCommand("shadergraph/list", params);
-}
-
-export async function getShaderGraphInfo(params) {
-  return sendCommand("shadergraph/info", params);
-}
-
-export async function getShaderProperties(params) {
-  return sendCommand("shadergraph/get-properties", params);
-}
-
-export async function createShaderGraph(params) {
-  return sendCommand("shadergraph/create", params);
-}
-
-export async function openShaderGraph(params) {
-  return sendCommand("shadergraph/open", params);
-}
-
-export async function listSubGraphs(params) {
-  return sendCommand("shadergraph/list-subgraphs", params);
-}
-
-export async function listVFXGraphs(params) {
-  return sendCommand("shadergraph/list-vfx", params);
-}
-
-export async function openVFXGraph(params) {
-  return sendCommand("shadergraph/open-vfx", params);
-}
-
-export async function getShaderGraphNodes(params) {
-  return sendCommand("shadergraph/get-nodes", params);
-}
-
-export async function getShaderGraphEdges(params) {
-  return sendCommand("shadergraph/get-edges", params);
-}
-
-export async function addShaderGraphNode(params) {
-  return sendCommand("shadergraph/add-node", params);
-}
-
-export async function removeShaderGraphNode(params) {
-  return sendCommand("shadergraph/remove-node", params);
-}
-
-export async function connectShaderGraphNodes(params) {
-  return sendCommand("shadergraph/connect", params);
-}
-
-export async function disconnectShaderGraphNodes(params) {
-  return sendCommand("shadergraph/disconnect", params);
-}
-
-export async function setShaderGraphNodeProperty(params) {
-  return sendCommand("shadergraph/set-node-property", params);
-}
-
-export async function getShaderGraphNodeTypes(params) {
-  return sendCommand("shadergraph/get-node-types", params);
-}
-
-// â”€â”€â”€ Amplify Shader Editor â”€â”€â”€
-
-export async function getAmplifyStatus(params) {
-  return sendCommand("amplify/status", params);
-}
-
-export async function listAmplifyShaders(params) {
-  return sendCommand("amplify/list", params);
-}
-
-export async function getAmplifyShaderInfo(params) {
-  return sendCommand("amplify/info", params);
-}
-
-export async function openAmplifyShader(params) {
-  return sendCommand("amplify/open", params);
-}
-
-export async function listAmplifyFunctions(params) {
-  return sendCommand("amplify/list-functions", params);
-}
-
-export async function getAmplifyNodeTypes(params) {
-  return sendCommand("amplify/get-node-types", params);
-}
-
-export async function getAmplifyGraphNodes(params) {
-  return sendCommand("amplify/get-nodes", params);
-}
-
-export async function getAmplifyGraphConnections(params) {
-  return sendCommand("amplify/get-connections", params);
-}
-
-export async function createAmplifyShader(params) {
-  return sendCommand("amplify/create-shader", params);
-}
-
-export async function addAmplifyNode(params) {
-  return sendCommand("amplify/add-node", params);
-}
-
-export async function removeAmplifyNode(params) {
-  return sendCommand("amplify/remove-node", params);
-}
-
-export async function connectAmplifyNodes(params) {
-  return sendCommand("amplify/connect", params);
-}
-
-export async function disconnectAmplifyNodes(params) {
-  return sendCommand("amplify/disconnect", params);
-}
-
-export async function getAmplifyNodeInfo(params) {
-  return sendCommand("amplify/node-info", params);
-}
-
-export async function setAmplifyNodeProperty(params) {
-  return sendCommand("amplify/set-node-property", params);
-}
-
-export async function moveAmplifyNode(params) {
-  return sendCommand("amplify/move-node", params);
-}
-
-export async function saveAmplifyGraph(params) {
-  return sendCommand("amplify/save", params);
-}
-
-export async function closeAmplifyEditor(params) {
-  return sendCommand("amplify/close", params);
-}
-
-export async function createAmplifyFromTemplate(params) {
-  return sendCommand("amplify/create-from-template", params);
-}
-
-export async function focusAmplifyNode(params) {
-  return sendCommand("amplify/focus-node", params);
-}
-
-export async function getAmplifyMasterNodeInfo(params) {
-  return sendCommand("amplify/master-node-info", params);
-}
-
-export async function disconnectAllAmplifyNode(params) {
-  return sendCommand("amplify/disconnect-all", params);
-}
-
-export async function duplicateAmplifyNode(params) {
-  return sendCommand("amplify/duplicate-node", params);
-}
-
-// â”€â”€â”€ Agent Management â”€â”€â”€
+// ─── Agent Management ───
 
 export async function listAgents(params) {
   return sendCommand("agents/list", params);
@@ -1302,137 +1135,7 @@ export async function getLightingSummary(params) {
   return sendCommand("graphics/lighting-summary", params);
 }
 
-// â”€â”€â”€ Terrain â”€â”€â”€
-
-export async function createTerrain(params) {
-  return sendCommand("terrain/create", params);
-}
-
-export async function getTerrainInfo(params) {
-  return sendCommand("terrain/info", params);
-}
-
-export async function setTerrainHeight(params) {
-  return sendCommand("terrain/set-height", params);
-}
-
-export async function flattenTerrain(params) {
-  return sendCommand("terrain/flatten", params);
-}
-
-export async function addTerrainLayer(params) {
-  return sendCommand("terrain/add-layer", params);
-}
-
-export async function getTerrainHeight(params) {
-  return sendCommand("terrain/get-height", params);
-}
-
-export async function listTerrains(params) {
-  return sendCommand("terrain/list", params);
-}
-
-export async function raiseLowerTerrainHeight(params) {
-  return sendCommand("terrain/raise-lower", params);
-}
-
-export async function smoothTerrainHeight(params) {
-  return sendCommand("terrain/smooth", params);
-}
-
-export async function setTerrainNoise(params) {
-  return sendCommand("terrain/noise", params);
-}
-
-export async function setTerrainHeightsRegion(params) {
-  return sendCommand("terrain/set-heights-region", params);
-}
-
-export async function getTerrainHeightsRegion(params) {
-  return sendCommand("terrain/get-heights-region", params);
-}
-
-export async function removeTerrainLayer(params) {
-  return sendCommand("terrain/remove-layer", params);
-}
-
-export async function paintTerrainLayer(params) {
-  return sendCommand("terrain/paint-layer", params);
-}
-
-export async function fillTerrainLayer(params) {
-  return sendCommand("terrain/fill-layer", params);
-}
-
-export async function addTerrainTreePrototype(params) {
-  return sendCommand("terrain/add-tree-prototype", params);
-}
-
-export async function removeTerrainTreePrototype(params) {
-  return sendCommand("terrain/remove-tree-prototype", params);
-}
-
-export async function placeTerrainTrees(params) {
-  return sendCommand("terrain/place-trees", params);
-}
-
-export async function clearTerrainTrees(params) {
-  return sendCommand("terrain/clear-trees", params);
-}
-
-export async function getTerrainTreeInstances(params) {
-  return sendCommand("terrain/get-tree-instances", params);
-}
-
-export async function addTerrainDetailPrototype(params) {
-  return sendCommand("terrain/add-detail-prototype", params);
-}
-
-export async function paintTerrainDetail(params) {
-  return sendCommand("terrain/paint-detail", params);
-}
-
-export async function scatterTerrainDetail(params) {
-  return sendCommand("terrain/scatter-detail", params);
-}
-
-export async function clearTerrainDetail(params) {
-  return sendCommand("terrain/clear-detail", params);
-}
-
-export async function setTerrainHoles(params) {
-  return sendCommand("terrain/set-holes", params);
-}
-
-export async function setTerrainSettings(params) {
-  return sendCommand("terrain/set-settings", params);
-}
-
-export async function resizeTerrain(params) {
-  return sendCommand("terrain/resize", params);
-}
-
-export async function createTerrainGrid(params) {
-  return sendCommand("terrain/create-grid", params);
-}
-
-export async function setTerrainNeighbors(params) {
-  return sendCommand("terrain/set-neighbors", params);
-}
-
-export async function importTerrainHeightmap(params) {
-  return sendCommand("terrain/import-heightmap", params);
-}
-
-export async function exportTerrainHeightmap(params) {
-  return sendCommand("terrain/export-heightmap", params);
-}
-
-export async function getTerrainSteepness(params) {
-  return sendCommand("terrain/get-steepness", params);
-}
-
-// â”€â”€â”€ Particle System â”€â”€â”€
+// ─── Particle System ───
 
 export async function createParticleSystem(params) {
   return sendCommand("particle/create", params);
@@ -1498,33 +1201,7 @@ export async function setTextureAsNormalMap(params) {
   return sendCommand("texture/set-normalmap", params);
 }
 
-// â”€â”€â”€ Navigation â”€â”€â”€
-
-export async function bakeNavMesh(params) {
-  return sendCommand("navigation/bake", params);
-}
-
-export async function clearNavMesh(params) {
-  return sendCommand("navigation/clear", params);
-}
-
-export async function addNavMeshAgent(params) {
-  return sendCommand("navigation/add-agent", params);
-}
-
-export async function addNavMeshObstacle(params) {
-  return sendCommand("navigation/add-obstacle", params);
-}
-
-export async function getNavMeshInfo(params) {
-  return sendCommand("navigation/info", params);
-}
-
-export async function setAgentDestination(params) {
-  return sendCommand("navigation/set-destination", params);
-}
-
-// â”€â”€â”€ UI â”€â”€â”€
+// ─── UI ───
 
 export async function createCanvas(params) {
   return sendCommand("ui/create-canvas", params);

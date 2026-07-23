@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// AnkleBreaker Unity MCP Server — Main entry point
+// VRseBuilder Unity MCP Server — Main entry point
 // Provides tools for Unity Hub management and Unity Editor control via MCP protocol
 //
 // Multi-agent support:
@@ -33,6 +33,17 @@ import { editorTools } from "./tools/editor-tools.js";
 import { umaTools } from "./tools/uma-tools.js";
 import { contextTools } from "./tools/context-tools.js";
 import { instanceTools } from "./tools/instance-tools.js";
+import { vrseInteractableTools } from "./tools/vrse-interactable-tools.js";
+import { vrseStoryOrchestrationTools } from "./tools/vrse-story-orchestration-tools.js";
+import { vrseStoryConsolidatedTools } from "./tools/vrse-story-tools.js";
+import { vrseInfinityTools } from "./tools/vrse-infinity-tools.js";
+import { vrseCreateRotatorFromMeshTools } from "./tools/vrse-create-rotator-from-mesh.js";
+import { vrseCreateButtonFromMeshTools } from "./tools/vrse-create-button-from-mesh.js";
+import { vrseParityTools } from "./tools/vrse-parity-tools.js";
+import { vrseSpatialTools } from "./tools/vrse-spatial-tools.js";
+import { vrseStoryReportTools } from "./tools/vrse-story-report.js";
+import { vrseGeneralUISetupTools } from "./tools/vrse-general-ui-setup.js";
+import { vrseStageTools, setSopSampler } from "./tools/vrse-stage-tools.js";
 import { splitToolTiers } from "./tool-tiers.js";
 import { setAgentId, getProjectContext } from "./unity-editor-bridge.js";
 import {
@@ -67,7 +78,7 @@ function truncateResponseIfNeeded(contentBlocks) {
   if (totalSize > hardLimit) {
     const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
     const limitMB = (hardLimit / (1024 * 1024)).toFixed(1);
-    console.error(`[MCP] Response truncated: ${sizeMB}MB exceeds hard limit of ${limitMB}MB`);
+    debugLog(`[MCP] Response truncated: ${sizeMB}MB exceeds hard limit of ${limitMB}MB`);
     return [
       {
         type: "text",
@@ -87,7 +98,7 @@ function truncateResponseIfNeeded(contentBlocks) {
 
   if (totalSize > softLimit) {
     const sizeMB = (totalSize / (1024 * 1024)).toFixed(1);
-    console.error(`[MCP] Large response warning: ${sizeMB}MB exceeds soft limit`);
+    debugLog(`[MCP] Large response warning: ${sizeMB}MB exceeds soft limit`);
     // Still return the data but add a warning
     contentBlocks.push({
       type: "text",
@@ -109,17 +120,35 @@ setAgentId(PROCESS_AGENT_ID);
 // This keeps the tool count under ~70, preventing MCP client rejection caused by
 // oversized tool lists (268 tools / 125KB was ~5x beyond what clients handle).
 const { coreTools, metaTools, advancedCount, coreCount } =
-  splitToolTiers([...editorTools, ...umaTools]);
+  splitToolTiers(editorTools, {
+    infinityTools: vrseInfinityTools,
+    rotatorTools: vrseCreateRotatorFromMeshTools,
+    buttonTools: vrseCreateButtonFromMeshTools,
+    storyTools: vrseStoryOrchestrationTools,
+  });
 const ALL_TOOLS = [
   ...instanceTools,
   ...hubTools,
   ...coreTools,
   ...metaTools,
   ...contextTools,
+  ...vrseInteractableTools,
+  ...vrseStoryConsolidatedTools,
+  ...vrseParityTools,
+  ...vrseSpatialTools,
+  ...vrseStoryReportTools,
+  ...vrseGeneralUISetupTools,
+  ...vrseStageTools,
 ];
-console.error(
+debugLog(
   `[MCP] Tool tiers: ${coreCount} core + ${advancedCount} advanced (via unity_advanced_tool) = ${coreCount + advancedCount} total, ${ALL_TOOLS.length} exposed`
 );
+
+// ─── Offline (pure-compute) tools ───
+// These do NOT touch the Unity Editor (no bridge call), so they must NOT be gated by
+// instance discovery/selection and should skip project-context auto-injection. They run
+// in any MCP client even with no Unity Editor open.
+const OFFLINE_TOOLS = new Set(["vrse_storyboard_structure", "vrse_parse_storyboard"]);
 
 // ─── Per-Agent Session State ───
 // A SINGLE MCP process serves ALL agents/tasks in the same Claude Desktop session.
@@ -154,7 +183,7 @@ async function getContextSummaryOnce() {
     }
 
     let summary =
-      "=== PROJECT CONTEXT (auto-provided by AB Unity MCP) ===\n\n";
+      "=== PROJECT CONTEXT (auto-provided by VRseBuilder Unity MCP) ===\n\n";
     for (const entry of _contextCache.categories) {
       summary += `--- ${entry.category} ---\n`;
       // Truncate very long files for auto-inject
@@ -264,7 +293,7 @@ async function ensureInstanceDiscovery() {
 
     return prompt;
   } catch (err) {
-    console.error(`[MCP] Instance discovery failed: ${err.message}`);
+    debugLog(`[MCP] Instance discovery failed: ${err.message}`);
     return null;
   }
 }
@@ -294,6 +323,27 @@ const server = new Server(
     ].join(" "),
   }
 );
+
+// ─── Wire the SOP sampler ───
+// Lets vrse_parse_storyboard run the SOP→storyboard conversion via the CLIENT's own model
+// (MCP sampling), so no API key needs to live in the server. Returns null when the
+// connected client doesn't advertise the `sampling` capability (vrse_parse_storyboard then
+// falls back to a server env key, then to agent-delegation).
+setSopSampler(async ({ system, user, maxTokens = 16000 }) => {
+  const caps = server.getClientCapabilities();
+  if (!caps || !caps.sampling) return null;
+  try {
+    const res = await server.createMessage({
+      messages: [{ role: "user", content: { type: "text", text: user } }],
+      ...(system ? { systemPrompt: system } : {}),
+      maxTokens,
+    });
+    return res && res.content && res.content.type === "text" ? res.content.text : null;
+  } catch (e) {
+    debugLog(`[vrse_parse_storyboard] MCP sampling failed: ${e.message}`);
+    return null;
+  }
+});
 
 // ─── List Tools Handler ───
 // Inject an optional `port` parameter into every unity_* tool schema (except
@@ -378,7 +428,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Auto-discover instances on first tool call (unless it's an instance tool itself)
     // Skip auto-discovery when port override is active — the caller already knows where to route.
     let instancePrompt = null;
-    if (!portOverride && name !== "unity_list_instances" && name !== "unity_select_instance") {
+    if (!portOverride && !OFFLINE_TOOLS.has(name) && name !== "unity_list_instances" && name !== "unity_select_instance") {
       instancePrompt = await ensureInstanceDiscovery();
     }
 
@@ -389,6 +439,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     debugLog(`Tool=${name}, portOverride=${portOverride || 'null'}, selectionRequired=${_selReq}, selectedPort=${_selInst?.port || 'null'}, instancePrompt=${instancePrompt ? 'SET' : 'null'}, discoveryDone=${_discoveryDonePerAgent.get(PROCESS_AGENT_ID) || false}`);
     if (
       _selReq &&
+      !OFFLINE_TOOLS.has(name) &&
       !name.startsWith("unity_hub_") &&
       name !== "unity_list_instances" &&
       name !== "unity_select_instance" &&
@@ -426,8 +477,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       contentBlocks.push({ type: "text", text: instancePrompt });
     }
 
-    // Auto-inject project context on the first successful tool call
-    const contextSummary = await getContextSummaryOnce();
+    // Auto-inject project context on the first successful tool call (skip for offline tools)
+    const contextSummary = OFFLINE_TOOLS.has(name) ? null : await getContextSummaryOnce();
     if (contextSummary) {
       contentBlocks.push({ type: "text", text: contextSummary });
     }
@@ -518,12 +569,12 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   debugLog(`=== SERVER START === v2.26.0, agent=${PROCESS_AGENT_ID}, discoveryDone=${_discoveryDonePerAgent.get(PROCESS_AGENT_ID) || false}, selectedPort=${getSelectedInstance()?.port || 'null'}`);
-  console.error(
+  debugLog(
     `Unity MCP Server running on stdio (agent: ${PROCESS_AGENT_ID})`
   );
 }
 
 main().catch((error) => {
-  console.error("Fatal error:", error);
+  debugLog(`Fatal error: ${error.message}`);
   process.exit(1);
 });

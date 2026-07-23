@@ -1,8 +1,206 @@
-﻿// AnkleBreaker Unity MCP â€” Tool definitions for Unity Editor operations (via HTTP bridge)
+// VRseBuilder Unity MCP — Tool definitions for Unity Editor operations (via HTTP bridge)
 import * as bridge from "../unity-editor-bridge.js";
+import { vrseInteractableTools } from "./vrse-interactable-tools.js";
 
 export const editorTools = [
-  // â”€â”€â”€ Connection â”€â”€â”€
+  ...vrseInteractableTools,
+  // VRseBuilder SDK
+  {
+    name: "unity_vrse_status",
+    description: "Get VRseBuilder SDK login state, selected project, and active scene status.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/status", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_login",
+    description: "Log into VRseBuilder SDK using username and password.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        username: { type: "string", description: "VRseBuilder username" },
+        password: { type: "string", description: "VRseBuilder password" }
+      },
+      required: ["username", "password"]
+    },
+    handler: async ({ username, password }) => JSON.stringify(await bridge.sendCommand("vrse/login", { username, password }), null, 2),
+  },
+  {
+    name: "unity_vrse_list_projects",
+    description: "List accessible VRse Studio projects and local VRseBuilder project configs.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/list-projects", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_select_project",
+    description: "Select the active VRseBuilder project by name or backend project ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Project name" },
+        projectId: { type: "string", description: "Backend project ID" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/select-project", params), null, 2),
+  },
+  {
+    name: "unity_vrse_list_modules",
+    description: "List VRseBuilder modules and experiences for the selected project or an explicitly provided project.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/list-modules", params), null, 2),
+  },
+  {
+    name: "unity_vrse_open_menu_scene",
+    description: "Open the selected VRseBuilder project's menu scene.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/open-menu-scene", params), null, 2),
+  },
+  {
+    name: "unity_vrse_open_module",
+    description: "Open a VRseBuilder module experience dev scene. Defaults to the training experience if no specific experience is provided.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        moduleId: { type: "string", description: "Module ID" },
+        moduleName: { type: "string", description: "Module name" },
+        experienceId: { type: "string", description: "Experience ID" },
+        experienceName: { type: "string", description: "Experience name" },
+        experienceType: { type: "string", description: "Training or Evaluation" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/open-module", params), null, 2),
+  },
+  {
+    name: "unity_vrse_open_room_manager_config",
+    description: "Open the selected VRseBuilder project's RoomManagerConfig asset.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/open-room-manager-config", params), null, 2),
+  },
+  {
+    name: "unity_vrse_get_selected_project",
+    description: "Get the currently selected VRseBuilder project.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/get-selected-project", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_get_project_config",
+    description: "Get RoomManagerConfig and scene paths for the selected VRseBuilder project.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/get-project-config", params), null, 2),
+  },
+  {
+    name: "unity_vrse_ensure_project_settings",
+    description: "Ensure VRseBuilder project settings assets exist for the selected project.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/ensure-project-settings", params), null, 2),
+  },
+  {
+    name: "unity_vrse_apply_project_settings",
+    description: "Auto-apply VRseBuilder project settings for the selected project.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/apply-project-settings", params), null, 2),
+  },
+  {
+    name: "unity_vrse_open_studio_project_window",
+    description: "Open the VRse Studio project selection window in the Unity editor.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/open-studio-project-window", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_open_project_config_window",
+    description: "Open the VRseBuilder project config window in the Unity editor.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/open-project-config-window", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_open_build_tool",
+    description: "Open the VRseBuilder build tool window in the Unity editor.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => JSON.stringify(await bridge.sendCommand("vrse/open-build-tool", {}), null, 2),
+  },
+  {
+    name: "unity_vrse_create_experience",
+    description: "Create a VRseBuilder experience dev scene, download its story JSON, and register it in RoomManagerConfig when IDs are provided.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        projectId: { type: "string", description: "Optional backend project ID used when resolving jsonFileUrl" },
+        moduleId: { type: "string", description: "Module ID" },
+        moduleName: { type: "string", description: "Module name" },
+        experienceId: { type: "string", description: "Experience ID" },
+        experienceName: { type: "string", description: "Experience name" },
+        experienceType: { type: "string", description: "Training or Evaluation" },
+        jsonFileUrl: { type: "string", description: "Optional story JSON URL. If omitted, the bridge will try to resolve it from the logged-in backend project." }
+      },
+      required: ["moduleName", "experienceName"]
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/create-experience", params), null, 2),
+  },
+  {
+    name: "unity_vrse_get_experience_creation_status",
+    description: "Get creation status for a VRseBuilder experience: config entry, story JSON, dev scene, and art scene.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        moduleId: { type: "string", description: "Module ID" },
+        moduleName: { type: "string", description: "Module name" },
+        experienceId: { type: "string", description: "Experience ID" },
+        experienceName: { type: "string", description: "Experience name" },
+        experienceType: { type: "string", description: "Training or Evaluation" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/get-experience-creation-status", params), null, 2),
+  },
+  {
+    name: "unity_vrse_open_art_scene",
+    description: "Open the configured art scene for a VRseBuilder experience additively.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        moduleId: { type: "string", description: "Module ID" },
+        moduleName: { type: "string", description: "Module name" },
+        experienceId: { type: "string", description: "Experience ID" },
+        experienceName: { type: "string", description: "Experience name" },
+        experienceType: { type: "string", description: "Training or Evaluation" }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/open-art-scene", params), null, 2),
+  },
+
+  // ─── Connection ───
   {
     name: "unity_editor_ping",
     description: "Check if the Unity Editor bridge is running and responsive. Returns editor version, project name, and connection status.",
@@ -1979,476 +2177,7 @@ export const editorTools = [
     handler: async (params) => JSON.stringify(await bridge.takeMemorySnapshot(params), null, 2),
   },
 
-  // â”€â”€â”€ Shader Graph â”€â”€â”€
-  {
-    name: "unity_shadergraph_status",
-    description: "Check which graph packages are installed: Shader Graph (com.unity.shadergraph) and Visual Effect Graph (com.unity.visualeffectgraph). Returns available commands based on installed packages.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getShaderGraphStatus(params), null, 2),
-  },
-  {
-    name: "unity_shader_list",
-    description: "List all shaders in the project (both .shader and .shadergraph files). Works without Shader Graph package. Filter by name, include/exclude built-in shaders.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filter: { type: "string", description: "Filter shaders by name or path (case-insensitive)" },
-        includeBuiltin: { type: "boolean", description: "Include Unity built-in shaders (default: false)" },
-        maxResults: { type: "number", description: "Maximum results to return (default: 100)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.listShaders(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_list",
-    description: "List all Shader Graph (.shadergraph) assets in the project. Requires Shader Graph package. Shows shader name, path, property count, pass count, and file size.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filter: { type: "string", description: "Filter by name or path" },
-        maxResults: { type: "number", description: "Maximum results (default: 100)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.listShaderGraphs(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_info",
-    description: "Get detailed info about a specific shader graph: exposed properties (with types, ranges), node count, features used (custom functions, sub-graphs, keywords), file size, pass count.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getShaderGraphInfo(params), null, 2),
-  },
-  {
-    name: "unity_shader_get_properties",
-    description: "Get exposed properties of any shader (.shader or .shadergraph). Shows property name, display name, type (Color, Vector, Float, Range, TexEnv), range limits, texture dimension, visibility.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the shader" },
-        shaderName: { type: "string", description: "Shader name (e.g. 'Universal Render Pipeline/Lit'). Alternative to path." },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.getShaderProperties(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_create",
-    description: "Create a new Shader Graph from a template. Templates: urp_lit, urp_unlit, urp_sprite_lit, urp_sprite_unlit, urp_decal, hdrp_lit, hdrp_unlit, blank. Requires Shader Graph package.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path for the new shader graph (e.g. 'Assets/Shaders/MyShader.shadergraph')" },
-        template: { type: "string", description: "Template type: urp_lit, urp_unlit, urp_sprite_lit, urp_sprite_unlit, urp_decal, hdrp_lit, hdrp_unlit, blank (default: urp_lit)" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.createShaderGraph(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_open",
-    description: "Open a shader graph in the Shader Graph editor window for visual editing. Requires Shader Graph package.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.openShaderGraph(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_list_subgraphs",
-    description: "List all Sub Graph (.shadersubgraph) assets in the project. Sub Graphs are reusable node groups for Shader Graphs. Requires Shader Graph package.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.listSubGraphs(params), null, 2),
-  },
-  {
-    name: "unity_vfx_list",
-    description: "List all Visual Effect Graph assets in the project. Requires Visual Effect Graph package (com.unity.visualeffectgraph).",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.listVFXGraphs(params), null, 2),
-  },
-  {
-    name: "unity_vfx_open",
-    description: "Open a Visual Effect Graph in the VFX Graph editor window. Requires Visual Effect Graph package.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the VFX Graph asset" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.openVFXGraph(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_get_nodes",
-    description: "Get all nodes in a Shader Graph file. Returns node IDs, types, positions, and basic property data by parsing the .shadergraph JSON. Essential for understanding graph structure before editing.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getShaderGraphNodes(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_get_edges",
-    description: "Get all edges (connections) in a Shader Graph. Returns source and target node IDs with slot IDs, showing how nodes are wired together.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getShaderGraphEdges(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_add_node",
-    description: "Add a new node to a Shader Graph. Supports common types: Add, Multiply, Subtract, Divide, Lerp, Color, Float, Vector2, Vector3, Vector4, Time, UV, Position, Normal, SampleTexture2D, Fresnel, Saturate, OneMinus, Power, Split, Combine. Also supports any type by full class name.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-        nodeType: { type: "string", description: "Node type name (e.g., 'Add', 'Multiply', 'Color', 'SampleTexture2D') or full class name" },
-        positionX: { type: "number", description: "X position in the graph (default 0)" },
-        positionY: { type: "number", description: "Y position in the graph (default 0)" },
-      },
-      required: ["path", "nodeType"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addShaderGraphNode(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_remove_node",
-    description: "Remove a node from a Shader Graph by its ID. Also removes all edges connected to the node.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-        nodeId: { type: "string", description: "The node's objectId (GUID) to remove â€” get from get_nodes" },
-      },
-      required: ["path", "nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.removeShaderGraphNode(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_connect",
-    description: "Connect two nodes in a Shader Graph by creating an edge between an output slot and an input slot.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-        outputNodeId: { type: "string", description: "Source node objectId" },
-        outputSlotId: { type: "number", description: "Output slot ID on the source node" },
-        inputNodeId: { type: "string", description: "Target node objectId" },
-        inputSlotId: { type: "number", description: "Input slot ID on the target node" },
-      },
-      required: ["path", "outputNodeId", "outputSlotId", "inputNodeId", "inputSlotId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.connectShaderGraphNodes(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_disconnect",
-    description: "Disconnect two nodes in a Shader Graph by removing the edge between them.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-        outputNodeId: { type: "string", description: "Source node objectId" },
-        outputSlotId: { type: "number", description: "Output slot ID" },
-        inputNodeId: { type: "string", description: "Target node objectId" },
-        inputSlotId: { type: "number", description: "Input slot ID" },
-      },
-      required: ["path", "outputNodeId", "outputSlotId", "inputNodeId", "inputSlotId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.disconnectShaderGraphNodes(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_set_node_property",
-    description: "Set a property value on a Shader Graph node. Can modify any serialized property like color values, float inputs, vector components, etc.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shadergraph file" },
-        nodeId: { type: "string", description: "Target node objectId" },
-        propertyName: { type: "string", description: "Property name in the serialized JSON (e.g., 'm_Value', 'm_DefaultValue')" },
-        value: { description: "New value â€” string, number, or boolean depending on the property" },
-      },
-      required: ["path", "nodeId", "propertyName", "value"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setShaderGraphNodeProperty(params), null, 2),
-  },
-  {
-    name: "unity_shadergraph_get_node_types",
-    description: "List all available Shader Graph node types by reflecting over the ShaderGraph assembly. Returns type names, categories, and full class names. Useful for discovering available nodes before adding them.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getShaderGraphNodeTypes(params), null, 2),
-  },
-
-  // â”€â”€â”€ Amplify Shader Editor â”€â”€â”€
-  {
-    name: "unity_amplify_status",
-    description: "Check if Amplify Shader Editor is installed in the project. Returns available commands, shader count, and function count. Only works when Amplify Shader Editor is imported.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyStatus(params), null, 2),
-  },
-  {
-    name: "unity_amplify_list",
-    description: "List all shaders created with Amplify Shader Editor. Detects Amplify shaders by scanning for ASE serialization markers in .shader files. Only available when Amplify is installed.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filter: { type: "string", description: "Filter by shader name or path" },
-        maxResults: { type: "number", description: "Maximum results (default: 100)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.listAmplifyShaders(params), null, 2),
-  },
-  {
-    name: "unity_amplify_info",
-    description: "Get detailed info about an Amplify shader: properties, render queue, pass count, and Amplify metadata (node count, version, features like custom expressions, functions, texture samples).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shader file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyShaderInfo(params), null, 2),
-  },
-  {
-    name: "unity_amplify_open",
-    description: "Open a shader in the Amplify Shader Editor window for visual editing. Only available when Amplify is installed.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path of the .shader file" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.openAmplifyShader(params), null, 2),
-  },
-  {
-    name: "unity_amplify_list_functions",
-    description: "List all Amplify Shader Functions in the project. Functions are reusable node groups (similar to Shader Graph Sub Graphs). Only available when Amplify is installed.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.listAmplifyFunctions(params), null, 2),
-  },
-  {
-    name: "unity_amplify_get_node_types",
-    description: "List all available Amplify Shader Editor node types by reflecting over the ASE assembly. Returns type names, categories, and descriptions. Requires Amplify to be installed.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyNodeTypes(params), null, 2),
-  },
-  {
-    name: "unity_amplify_get_nodes",
-    description: "Get all nodes in the currently open Amplify Shader Editor graph. Returns node IDs, types, positions, and port counts. The ASE window must be open with a shader loaded.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyGraphNodes(params), null, 2),
-  },
-  {
-    name: "unity_amplify_get_connections",
-    description: "Get all connections between nodes in the currently open Amplify Shader Editor graph. Shows which output ports connect to which input ports.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyGraphConnections(params), null, 2),
-  },
-  {
-    name: "unity_amplify_create_shader",
-    description: "Create a new Amplify Shader Editor shader file with proper ASE serialization markers. The shader can then be opened in ASE for visual editing.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path for the new shader (e.g., 'Assets/Shaders/MyShader.shader')" },
-        shaderName: { type: "string", description: "Shader name in the shader dropdown (e.g., 'Custom/MyShader')" },
-      },
-      required: ["path", "shaderName"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.createAmplifyShader(params), null, 2),
-  },
-  {
-    name: "unity_amplify_add_node",
-    description: "Add a node to the currently open Amplify Shader Editor graph. The ASE window must be open with a shader loaded. Use unity_amplify_get_node_types to discover available node types first.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeType: { type: "string", description: "Full type name of the node (e.g., 'AmplifyShaderEditor.ColorNode', 'AmplifyShaderEditor.SimpleMultiplyOpNode', 'AmplifyShaderEditor.SamplerNode')" },
-        x: { type: "number", description: "X position in graph (default: 0)" },
-        y: { type: "number", description: "Y position in graph (default: 0)" },
-      },
-      required: ["nodeType"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addAmplifyNode(params), null, 2),
-  },
-  {
-    name: "unity_amplify_remove_node",
-    description: "Remove a node from the currently open Amplify Shader Editor graph by its unique ID. Cannot remove the master/output node.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node to remove (from unity_amplify_get_nodes)" },
-      },
-      required: ["nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.removeAmplifyNode(params), null, 2),
-  },
-  {
-    name: "unity_amplify_connect",
-    description: "Connect two nodes in the Amplify Shader Editor graph. Connects an output port of one node to an input port of another node.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        outputNodeId: { type: "number", description: "ID of the source node (output side)" },
-        outputPortId: { type: "number", description: "Port index on the output node (0-based)" },
-        inputNodeId: { type: "number", description: "ID of the destination node (input side)" },
-        inputPortId: { type: "number", description: "Port index on the input node (0-based)" },
-      },
-      required: ["outputNodeId", "outputPortId", "inputNodeId", "inputPortId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.connectAmplifyNodes(params), null, 2),
-  },
-  {
-    name: "unity_amplify_disconnect",
-    description: "Disconnect a specific port on a node in the Amplify Shader Editor graph.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "ID of the node" },
-        portId: { type: "number", description: "Port index (0-based)" },
-        isInput: { type: "boolean", description: "True to disconnect an input port, false for output port (default: true)" },
-      },
-      required: ["nodeId", "portId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.disconnectAmplifyNodes(params), null, 2),
-  },
-  {
-    name: "unity_amplify_node_info",
-    description: "Get detailed information about a specific node in the Amplify Shader Editor graph, including all input/output ports with names, data types, and connection status.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node" },
-      },
-      required: ["nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyNodeInfo(params), null, 2),
-  },
-  {
-    name: "unity_amplify_set_node_property",
-    description: "Set a property or field value on a node in the Amplify Shader Editor graph via reflection. If the property name is wrong, returns a list of available properties.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node" },
-        propertyName: { type: "string", description: "Name of the property or field to set (e.g., 'm_defaultValue', 'PropertyName')" },
-        value: { type: "string", description: "Value to set (will be parsed based on property type)" },
-      },
-      required: ["nodeId", "propertyName", "value"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setAmplifyNodeProperty(params), null, 2),
-  },
-  {
-    name: "unity_amplify_move_node",
-    description: "Move a node to a new position in the Amplify Shader Editor graph.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node" },
-        x: { type: "number", description: "New X position" },
-        y: { type: "number", description: "New Y position" },
-      },
-      required: ["nodeId", "x", "y"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.moveAmplifyNode(params), null, 2),
-  },
-  {
-    name: "unity_amplify_save",
-    description: "Save the currently open Amplify Shader Editor graph to disk. If the shader has never been saved, auto-determines a save path from the shader name or uses the provided path.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Optional asset path to save to (e.g. 'Assets/Shaders/MyShader.shader'). Only needed if the shader has never been saved before." },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.saveAmplifyGraph(params), null, 2),
-  },
-  {
-    name: "unity_amplify_close",
-    description: "Close the Amplify Shader Editor window. By default saves the graph before closing to prevent save dialogs.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        save: { type: "boolean", description: "Save the graph before closing (default: true)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.closeAmplifyEditor(params), null, 2),
-  },
-  {
-    name: "unity_amplify_create_from_template",
-    description: "Create a new Amplify shader from a predefined template (surface, unlit, urp_lit, transparent, post_process). The shader file is created and can then be opened in ASE.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "Asset path for the new shader (e.g., 'Assets/Shaders/MyShader.shader')" },
-        shaderName: { type: "string", description: "Shader name in the dropdown (e.g., 'Custom/MyShader')" },
-        template: { type: "string", description: "Template type: 'surface' (Standard PBR), 'unlit', 'urp' or 'urp_lit' (URP Lit), 'transparent', 'post_process' or 'postprocess'" },
-      },
-      required: ["path", "shaderName", "template"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.createAmplifyFromTemplate(params), null, 2),
-  },
-  {
-    name: "unity_amplify_focus_node",
-    description: "Focus the Amplify Shader Editor view on a specific node, centering and optionally zooming to it.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node to focus on" },
-        zoom: { type: "number", description: "Zoom level (default: 1.0)" },
-        select: { type: "boolean", description: "Also select the node (default: true)" },
-      },
-      required: ["nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.focusAmplifyNode(params), null, 2),
-  },
-  {
-    name: "unity_amplify_master_node_info",
-    description: "Get detailed information about the master/output node of the currently open Amplify shader graph, including all its input ports and properties.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getAmplifyMasterNodeInfo(params), null, 2),
-  },
-  {
-    name: "unity_amplify_disconnect_all",
-    description: "Remove all connections from a specific node in the Amplify Shader Editor graph (both input and output connections).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node to disconnect" },
-      },
-      required: ["nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.disconnectAllAmplifyNode(params), null, 2),
-  },
-  {
-    name: "unity_amplify_duplicate_node",
-    description: "Duplicate a node in the Amplify Shader Editor graph. Creates a new node of the same type at a slight offset from the original.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "Unique ID of the node to duplicate" },
-        offsetX: { type: "number", description: "X offset from original (default: 50)" },
-        offsetY: { type: "number", description: "Y offset from original (default: 50)" },
-      },
-      required: ["nodeId"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.duplicateAmplifyNode(params), null, 2),
-  },
-
-  // â”€â”€â”€ Search & Find â”€â”€â”€
+  // ─── Search & Find ───
   {
     name: "unity_search_by_component",
     description: "Find all GameObjects in the scene that have a specific component type. Returns their paths and instance IDs.",
@@ -3011,494 +2740,7 @@ export const editorTools = [
       JSON.stringify(await bridge.getLightingSummary(params), null, 2),
   },
 
-  // â”€â”€â”€ Terrain â”€â”€â”€
-  {
-    name: "unity_terrain_create",
-    description: "Create a new Terrain in the scene with configurable size and heightmap resolution.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Terrain name (default: 'Terrain')" },
-        width: { type: "number", description: "Terrain width in units (default: 1000)" },
-        length: { type: "number", description: "Terrain length in units (default: 1000)" },
-        height: { type: "number", description: "Maximum terrain height (default: 600)" },
-        heightmapResolution: { type: "number", description: "Heightmap resolution, must be power of 2 + 1 (default: 513)" },
-        position: { type: "object", description: "World position { x, y, z }", properties: { x: { type: "number" }, y: { type: "number" }, z: { type: "number" } } },
-        dataPath: { type: "string", description: "Path to save terrain data asset (default: Assets/TerrainName_Data.asset)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.createTerrain(params), null, 2),
-  },
-  {
-    name: "unity_terrain_info",
-    description: "Get detailed terrain information: size, resolution, layers, tree/detail counts, settings.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Terrain name. If omitted, uses the active terrain." },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.getTerrainInfo(params), null, 2),
-  },
-  {
-    name: "unity_terrain_set_height",
-    description: "Set terrain height at a position with optional radius falloff. Coordinates are normalized (0-1).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        x: { type: "number", description: "Normalized X position (0-1)" },
-        z: { type: "number", description: "Normalized Z position (0-1)" },
-        height: { type: "number", description: "Height value (0-1, where 1 = max terrain height)" },
-        radius: { type: "number", description: "Brush radius in heightmap pixels (default: 1)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["x", "z", "height"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainHeight(params), null, 2),
-  },
-  {
-    name: "unity_terrain_flatten",
-    description: "Flatten the entire terrain to a uniform height.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        height: { type: "number", description: "Height value (0-1, default: 0)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.flattenTerrain(params), null, 2),
-  },
-  {
-    name: "unity_terrain_add_layer",
-    description: "Add a texture layer to the terrain for painting.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        texturePath: { type: "string", description: "Asset path of the diffuse texture" },
-        normalMapPath: { type: "string", description: "Asset path of the normal map texture (optional)" },
-        tileSizeX: { type: "number", description: "Tile size X (default: 10)" },
-        tileSizeY: { type: "number", description: "Tile size Y (default: 10)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["texturePath"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addTerrainLayer(params), null, 2),
-  },
-  {
-    name: "unity_terrain_get_height",
-    description: "Sample the terrain height at a world position.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        worldX: { type: "number", description: "World X coordinate" },
-        worldZ: { type: "number", description: "World Z coordinate" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["worldX", "worldZ"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getTerrainHeight(params), null, 2),
-  },
-  {
-    name: "unity_terrain_list",
-    description: "List all terrains in the scene with their names, positions, sizes, and basic info.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.listTerrains(params), null, 2),
-  },
-  {
-    name: "unity_terrain_raise_lower",
-    description: "Raise or lower terrain height at a normalized position with a brush radius and falloff. Use positive delta to raise, negative to lower.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        x: { type: "number", description: "Normalized X position (0-1)" },
-        z: { type: "number", description: "Normalized Z position (0-1)" },
-        delta: { type: "number", description: "Height change amount (-1 to 1). Positive raises, negative lowers." },
-        radius: { type: "number", description: "Brush radius in heightmap pixels (default: 10)" },
-        falloff: { type: "string", description: "Falloff type: 'linear', 'smooth', or 'constant' (default: 'smooth')" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["x", "z", "delta"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.raiseLowerTerrainHeight(params), null, 2),
-  },
-  {
-    name: "unity_terrain_smooth",
-    description: "Smooth terrain heights at a normalized position to reduce sharp edges. Uses kernel averaging.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        x: { type: "number", description: "Normalized X position (0-1)" },
-        z: { type: "number", description: "Normalized Z position (0-1)" },
-        radius: { type: "number", description: "Brush radius in heightmap pixels (default: 10)" },
-        strength: { type: "number", description: "Smoothing strength 0-1 (default: 0.5)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["x", "z"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.smoothTerrainHeight(params), null, 2),
-  },
-  {
-    name: "unity_terrain_noise",
-    description: "Apply Perlin noise to the entire terrain heightmap. Great for generating natural-looking terrain.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        scale: { type: "number", description: "Noise scale / frequency (default: 20)" },
-        amplitude: { type: "number", description: "Noise amplitude 0-1 (default: 0.1)" },
-        octaves: { type: "number", description: "Number of noise octaves for detail (default: 4)" },
-        seed: { type: "number", description: "Random seed (default: 0)" },
-        additive: { type: "boolean", description: "If true, adds noise to existing heights. If false, replaces (default: false)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainNoise(params), null, 2),
-  },
-  {
-    name: "unity_terrain_set_heights_region",
-    description: "Set heights for a rectangular region of the heightmap. Heights are normalized 0-1.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        xBase: { type: "number", description: "Start X index in heightmap" },
-        yBase: { type: "number", description: "Start Y index in heightmap" },
-        heights: { type: "array", description: "2D array of height values [row][col], each 0-1", items: { type: "array", items: { type: "number" } } },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["xBase", "yBase", "heights"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainHeightsRegion(params), null, 2),
-  },
-  {
-    name: "unity_terrain_get_heights_region",
-    description: "Get heights for a rectangular region of the heightmap. Returns normalized 0-1 values.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        xBase: { type: "number", description: "Start X index in heightmap" },
-        yBase: { type: "number", description: "Start Y index in heightmap" },
-        width: { type: "number", description: "Width of region to read" },
-        height: { type: "number", description: "Height of region to read" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["xBase", "yBase", "width", "height"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getTerrainHeightsRegion(params), null, 2),
-  },
-  {
-    name: "unity_terrain_remove_layer",
-    description: "Remove a texture layer from the terrain by index.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        layerIndex: { type: "number", description: "Index of the terrain layer to remove" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["layerIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.removeTerrainLayer(params), null, 2),
-  },
-  {
-    name: "unity_terrain_paint_layer",
-    description: "Paint a terrain texture layer at a normalized position with brush radius, opacity and falloff.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        x: { type: "number", description: "Normalized X position (0-1)" },
-        z: { type: "number", description: "Normalized Z position (0-1)" },
-        layerIndex: { type: "number", description: "Index of the terrain layer to paint" },
-        radius: { type: "number", description: "Brush radius in alphamap pixels (default: 10)" },
-        opacity: { type: "number", description: "Paint opacity 0-1 (default: 1.0)" },
-        falloff: { type: "string", description: "Falloff type: 'linear', 'smooth', or 'constant' (default: 'smooth')" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["x", "z", "layerIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.paintTerrainLayer(params), null, 2),
-  },
-  {
-    name: "unity_terrain_fill_layer",
-    description: "Fill the entire terrain with a single texture layer (sets that layer to 100% everywhere).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        layerIndex: { type: "number", description: "Index of the terrain layer to fill with" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["layerIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.fillTerrainLayer(params), null, 2),
-  },
-  {
-    name: "unity_terrain_add_tree_prototype",
-    description: "Add a tree prefab prototype to the terrain for tree placement.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        prefabPath: { type: "string", description: "Asset path to the tree prefab (e.g. 'Assets/Trees/Oak.prefab')" },
-        bendFactor: { type: "number", description: "Wind bend factor (default: 0)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["prefabPath"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addTerrainTreePrototype(params), null, 2),
-  },
-  {
-    name: "unity_terrain_remove_tree_prototype",
-    description: "Remove a tree prototype from the terrain by index. Also removes all placed instances of that prototype.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        prototypeIndex: { type: "number", description: "Index of the tree prototype to remove" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["prototypeIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.removeTerrainTreePrototype(params), null, 2),
-  },
-  {
-    name: "unity_terrain_place_trees",
-    description: "Place trees on the terrain. Supports random scatter over an area or manual positions. Scatter mode supports steepness and altitude filtering.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        prototypeIndex: { type: "number", description: "Index of the tree prototype to place" },
-        count: { type: "number", description: "Number of trees for random scatter mode" },
-        area: { type: "object", description: "Scatter area { xMin, xMax, zMin, zMax } normalized 0-1 (default: entire terrain)", properties: { xMin: { type: "number" }, xMax: { type: "number" }, zMin: { type: "number" }, zMax: { type: "number" } } },
-        positions: { type: "array", description: "Manual positions array of { x, z } normalized 0-1. Overrides scatter mode.", items: { type: "object", properties: { x: { type: "number" }, z: { type: "number" } } } },
-        minHeight: { type: "number", description: "Min tree height scale (default: 0.8)" },
-        maxHeight: { type: "number", description: "Max tree height scale (default: 1.2)" },
-        minWidth: { type: "number", description: "Min tree width scale (default: 0.8)" },
-        maxWidth: { type: "number", description: "Max tree width scale (default: 1.2)" },
-        minSteepness: { type: "number", description: "Min terrain steepness in degrees for placement (default: 0)" },
-        maxSteepness: { type: "number", description: "Max terrain steepness in degrees for placement (default: 90)" },
-        minAltitude: { type: "number", description: "Min terrain altitude (world units) for placement" },
-        maxAltitude: { type: "number", description: "Max terrain altitude (world units) for placement" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["prototypeIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.placeTerrainTrees(params), null, 2),
-  },
-  {
-    name: "unity_terrain_clear_trees",
-    description: "Clear all trees from the terrain, optionally filtering by prototype index.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        prototypeIndex: { type: "number", description: "If specified, only remove trees of this prototype index" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.clearTerrainTrees(params), null, 2),
-  },
-  {
-    name: "unity_terrain_get_tree_instances",
-    description: "Get all tree instances on the terrain. Returns positions, prototype indices, scales, and count.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        limit: { type: "number", description: "Max number of trees to return (default: 500)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.getTerrainTreeInstances(params), null, 2),
-  },
-  {
-    name: "unity_terrain_add_detail_prototype",
-    description: "Add a detail/grass prototype to the terrain. Use texturePath for grass billboards or prefabPath for mesh details.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        texturePath: { type: "string", description: "Asset path for grass texture (billboard mode)" },
-        prefabPath: { type: "string", description: "Asset path for detail mesh prefab" },
-        minWidth: { type: "number", description: "Min width (default: 1)" },
-        maxWidth: { type: "number", description: "Max width (default: 2)" },
-        minHeight: { type: "number", description: "Min height (default: 1)" },
-        maxHeight: { type: "number", description: "Max height (default: 2)" },
-        dryColor: { type: "object", description: "Dry color { r, g, b, a } 0-1", properties: { r: { type: "number" }, g: { type: "number" }, b: { type: "number" }, a: { type: "number" } } },
-        healthyColor: { type: "object", description: "Healthy color { r, g, b, a } 0-1", properties: { r: { type: "number" }, g: { type: "number" }, b: { type: "number" }, a: { type: "number" } } },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.addTerrainDetailPrototype(params), null, 2),
-  },
-  {
-    name: "unity_terrain_paint_detail",
-    description: "Paint terrain detail/grass at a normalized position with a brush.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        x: { type: "number", description: "Normalized X position (0-1)" },
-        z: { type: "number", description: "Normalized Z position (0-1)" },
-        detailIndex: { type: "number", description: "Index of the detail prototype to paint" },
-        radius: { type: "number", description: "Brush radius in detail pixels (default: 10)" },
-        density: { type: "number", description: "Detail density value 0-16 (default: 8)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["x", "z", "detailIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.paintTerrainDetail(params), null, 2),
-  },
-  {
-    name: "unity_terrain_scatter_detail",
-    description: "Randomly scatter detail/grass across the entire terrain or a region.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        detailIndex: { type: "number", description: "Index of the detail prototype" },
-        density: { type: "number", description: "Detail density value 0-16 (default: 4)" },
-        coverage: { type: "number", description: "Coverage percentage 0-1 (default: 0.5)" },
-        seed: { type: "number", description: "Random seed (default: 0)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["detailIndex"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.scatterTerrainDetail(params), null, 2),
-  },
-  {
-    name: "unity_terrain_clear_detail",
-    description: "Clear all detail/grass from the terrain, optionally filtering by prototype index.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        detailIndex: { type: "number", description: "If specified, only clear this detail prototype index" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.clearTerrainDetail(params), null, 2),
-  },
-  {
-    name: "unity_terrain_set_holes",
-    description: "Create or fill holes in the terrain at a region. Holes make the terrain transparent and non-collidable.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        xBase: { type: "number", description: "Start X index in holes map" },
-        yBase: { type: "number", description: "Start Y index in holes map" },
-        holes: { type: "array", description: "2D boolean array [row][col] â€” true = solid, false = hole", items: { type: "array", items: { type: "boolean" } } },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["xBase", "yBase", "holes"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainHoles(params), null, 2),
-  },
-  {
-    name: "unity_terrain_set_settings",
-    description: "Modify terrain rendering and physics settings like pixel error, base map distance, detail density, etc.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        heightmapPixelError: { type: "number", description: "Heightmap pixel error (LOD accuracy, default: 5)" },
-        baseMapDist: { type: "number", description: "Base map distance for texture blending" },
-        detailObjectDistance: { type: "number", description: "Max distance for detail objects" },
-        detailObjectDensity: { type: "number", description: "Detail object density 0-1" },
-        treeDistance: { type: "number", description: "Max distance for trees" },
-        treeBillboardDistance: { type: "number", description: "Distance at which trees become billboards" },
-        treeCrossFadeLength: { type: "number", description: "Cross-fade length for tree LOD transitions" },
-        treeMaximumFullLODCount: { type: "number", description: "Max number of full-LOD trees" },
-        drawHeightmap: { type: "boolean", description: "Whether to draw the heightmap" },
-        drawTreesAndFoliage: { type: "boolean", description: "Whether to draw trees and foliage" },
-        materialPath: { type: "string", description: "Asset path for custom terrain material" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainSettings(params), null, 2),
-  },
-  {
-    name: "unity_terrain_resize",
-    description: "Resize an existing terrain's dimensions or heightmap resolution. Warning: may reset heights.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        width: { type: "number", description: "New terrain width" },
-        length: { type: "number", description: "New terrain length" },
-        height: { type: "number", description: "New max terrain height" },
-        heightmapResolution: { type: "number", description: "New heightmap resolution (power of 2 + 1)" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.resizeTerrain(params), null, 2),
-  },
-  {
-    name: "unity_terrain_create_grid",
-    description: "Create a grid of connected terrain tiles for large worlds. Automatically sets up terrain neighbors for seamless LOD transitions.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        rows: { type: "number", description: "Number of rows in the grid" },
-        cols: { type: "number", description: "Number of columns in the grid" },
-        tileWidth: { type: "number", description: "Width of each tile (default: 1000)" },
-        tileLength: { type: "number", description: "Length of each tile (default: 1000)" },
-        tileHeight: { type: "number", description: "Max height of each tile (default: 600)" },
-        heightmapResolution: { type: "number", description: "Heightmap resolution per tile (default: 513)" },
-        baseName: { type: "string", description: "Base name for terrain tiles (default: 'Terrain')" },
-        startPosition: { type: "object", description: "World position of the grid origin { x, y, z }", properties: { x: { type: "number" }, y: { type: "number" }, z: { type: "number" } } },
-      },
-      required: ["rows", "cols"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.createTerrainGrid(params), null, 2),
-  },
-  {
-    name: "unity_terrain_set_neighbors",
-    description: "Set terrain neighbor connections for seamless LOD transitions between tiles.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        terrain: { type: "string", description: "Name of the terrain to set neighbors for" },
-        left: { type: "string", description: "Name of the left neighbor terrain (or null)" },
-        top: { type: "string", description: "Name of the top neighbor terrain (or null)" },
-        right: { type: "string", description: "Name of the right neighbor terrain (or null)" },
-        bottom: { type: "string", description: "Name of the bottom neighbor terrain (or null)" },
-      },
-      required: ["terrain"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setTerrainNeighbors(params), null, 2),
-  },
-  {
-    name: "unity_terrain_import_heightmap",
-    description: "Import a heightmap from a RAW file or texture asset into the terrain.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filePath: { type: "string", description: "Path to .raw file (absolute) or asset path to a Texture2D" },
-        format: { type: "string", description: "'raw16' (16-bit RAW, default), 'raw8' (8-bit RAW), or 'texture'" },
-        byteOrder: { type: "string", description: "Byte order for RAW: 'little' (default) or 'big'" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["filePath"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.importTerrainHeightmap(params), null, 2),
-  },
-  {
-    name: "unity_terrain_export_heightmap",
-    description: "Export terrain heightmap to a RAW file or PNG texture.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filePath: { type: "string", description: "Output file path (e.g. 'Assets/Heightmaps/terrain.raw')" },
-        format: { type: "string", description: "'raw16' (16-bit RAW, default) or 'png'" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["filePath"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.exportTerrainHeightmap(params), null, 2),
-  },
-  {
-    name: "unity_terrain_get_steepness",
-    description: "Get the terrain steepness (slope angle in degrees) and surface normal at a world position.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        worldX: { type: "number", description: "World X coordinate" },
-        worldZ: { type: "number", description: "World Z coordinate" },
-        name: { type: "string", description: "Terrain name (optional)" },
-      },
-      required: ["worldX", "worldZ"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.getTerrainSteepness(params), null, 2),
-  },
-
-  // â”€â”€â”€ Particle System â”€â”€â”€
+  // ─── Particle System ───
   {
     name: "unity_particle_create",
     description: "Create a new Particle System with optional initial settings.",
@@ -3725,85 +2967,7 @@ export const editorTools = [
     handler: async (params) => JSON.stringify(await bridge.setTextureAsNormalMap(params), null, 2),
   },
 
-  // â”€â”€â”€ Navigation â”€â”€â”€
-
-  {
-    name: "unity_navmesh_bake",
-    description: "Bake the NavMesh for AI navigation. Optionally configure agent radius, height, slope, and climb.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        agentRadius: { type: "number", description: "Agent radius (default: from NavMesh settings)" },
-        agentHeight: { type: "number", description: "Agent height" },
-        agentSlope: { type: "number", description: "Max slope angle in degrees" },
-        agentClimb: { type: "number", description: "Step height the agent can climb" },
-      },
-    },
-    handler: async (params) => JSON.stringify(await bridge.bakeNavMesh(params), null, 2),
-  },
-  {
-    name: "unity_navmesh_clear",
-    description: "Clear all baked NavMeshes from the scene.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.clearNavMesh(params), null, 2),
-  },
-  {
-    name: "unity_navmesh_add_agent",
-    description: "Add a NavMeshAgent component to a GameObject with optional settings (speed, angular speed, acceleration, stopping distance, radius, height).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "GameObject path or name" },
-        speed: { type: "number", description: "Movement speed" },
-        angularSpeed: { type: "number", description: "Turning speed in deg/s" },
-        acceleration: { type: "number", description: "Acceleration" },
-        stoppingDistance: { type: "number", description: "Distance to stop before target" },
-        radius: { type: "number", description: "Agent radius" },
-        height: { type: "number", description: "Agent height" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addNavMeshAgent(params), null, 2),
-  },
-  {
-    name: "unity_navmesh_add_obstacle",
-    description: "Add a NavMeshObstacle component to a GameObject.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "GameObject path or name" },
-        carve: { type: "boolean", description: "Whether the obstacle carves the NavMesh" },
-        shape: { type: "string", description: "Shape: 'box' or 'capsule'" },
-      },
-      required: ["path"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.addNavMeshObstacle(params), null, 2),
-  },
-  {
-    name: "unity_navmesh_info",
-    description: "Get NavMesh information: vertex/triangle count, agents, obstacles, agent types.",
-    inputSchema: { type: "object", properties: {} },
-    handler: async (params) => JSON.stringify(await bridge.getNavMeshInfo(params), null, 2),
-  },
-  {
-    name: "unity_navmesh_set_destination",
-    description: "Set the destination for a NavMeshAgent (requires Play mode).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        path: { type: "string", description: "GameObject path with NavMeshAgent" },
-        destination: {
-          type: "object",
-          description: "Target position {x, y, z}",
-          properties: { x: { type: "number" }, y: { type: "number" }, z: { type: "number" } },
-        },
-      },
-      required: ["path", "destination"],
-    },
-    handler: async (params) => JSON.stringify(await bridge.setAgentDestination(params), null, 2),
-  },
-
-  // â”€â”€â”€ UI â”€â”€â”€
+  // ─── UI ───
 
   {
     name: "unity_ui_create_canvas",
@@ -4072,7 +3236,84 @@ export const editorTools = [
     handler: async (params) => JSON.stringify(await bridge.deleteAllPlayerPrefs(params), null, 2),
   },
 
-  // â”€â”€â”€ Queue Management (Multi-Agent) â”€â”€â”€
+  {
+    name: "unity_vrse_building_blocks_list",
+    description: "List all available Building Block prefabs available for instantiation.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      } 
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/building-blocks-list", params), null, 2),
+  },
+  {
+    name: "unity_vrse_building_blocks_instantiate",
+    description: "Instantiate a Building Block prefab into the scene.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        blockId: { type: "string", description: "The GUID of the Building Block to instantiate" },
+        parentPath: { type: "string", description: "Optional path to the parent GameObject" },
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      },
+      required: ["blockId", "port"]
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/building-blocks-instantiate", params), null, 2),
+  },
+  {
+    name: "unity_vrse_scene_hierarchy_checkup",
+    description: "Perform a scene hierarchy checkup and move unparented query objects into the global QueryObjects group.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      } 
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/scene-hierarchy-checkup", params), null, 2),
+  },
+  {
+    name: "unity_vrse_module_set_include_in_build",
+    description: "Set whether a specific VRseBuilder module should be included in the Unity build settings.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        moduleName: { type: "string", description: "The name of the module" },
+        includeInBuild: { type: "boolean", description: "Whether to include this module in the build (default: true)" },
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      },
+      required: ["moduleName", "port"]
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/module-set-include-in-build", params), null, 2),
+  },
+  {
+    name: "unity_vrse_build_start",
+    description: "Trigger a headless Unity build for the VRseBuilder project.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        buildPath: { type: "string", description: "Output path for the built player/APK" },
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      },
+      required: ["buildPath", "port"]
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/build-start", params), null, 2),
+  },
+  {
+    name: "unity_vrse_build_status",
+    description: "Check the status of the Unity build process.",
+    inputSchema: { 
+      type: "object", 
+      properties: {
+        port: { type: "number", description: "Target Unity instance port for parallel-safe routing." }
+      } 
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/build-status", params), null, 2),
+  },
+
+  // ─── Queue Management (Multi-Agent) ───
   {
     name: "unity_queue_info",
     description:
@@ -4100,7 +3341,7 @@ export const editorTools = [
   {
     name: "unity_agents_list",
     description:
-      "List all active agent sessions connected to the AB Unity MCP bridge. Shows each agent's ID, connection time, last activity, current action, total actions count, queued/completed request counts, and average response time.",
+      "List all active agent sessions connected to the VRseBuilder Unity MCP bridge. Shows each agent's ID, connection time, last activity, current action, total actions count, queued/completed request counts, and average response time.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => JSON.stringify(await bridge.listAgents(), null, 2),
   },

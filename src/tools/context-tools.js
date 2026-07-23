@@ -1,4 +1,4 @@
-// AnkleBreaker Unity MCP — Tool definitions for Project Context
+// VRseBuilder Unity MCP — Tool definitions for Project Context
 // These tools give agents access to project-specific documentation and guidelines
 // stored in the Unity project's Assets/MCP/Context/ folder.
 

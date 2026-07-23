@@ -1,4 +1,4 @@
-// AnkleBreaker Unity MCP — Tool definitions for Multi-Instance Management
+// VRseBuilder Unity MCP — Tool definitions for Multi-Instance Management
 // These tools let agents discover, list, and select which Unity Editor instance to work with.
 
 import {

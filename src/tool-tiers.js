@@ -1,4 +1,5 @@
-// AnkleBreaker Unity MCP — Two-tier tool system
+import { debugLog } from './state-persistence.js';
+// VRseBuilder Unity MCP — Two-tier tool system
 // Reduces the exposed tool count to avoid overwhelming MCP clients.
 //
 // Core tools: Always exposed as individual MCP tools (~60 tools)
@@ -10,7 +11,7 @@
 //
 // Lazy loading: Advanced tools support dynamic dispatch. If a tool
 // isn't in the cached map, the route is derived from the tool name
-// (unity_terrain_list → terrain/list) and called directly via sendCommand.
+// (unity_animation_create_clip → animation/create-clip) and called directly via sendCommand.
 // This means new tools added to the C# plugin work immediately without
 // restarting the MCP server.
 
@@ -32,7 +33,7 @@ const ROUTE_OVERRIDES = {
 
 /**
  * Derive an HTTP route from a tool name.
- * unity_terrain_raise_lower → terrain/raise-lower
+ * unity_prefab_open → prefab/open
  * unity_animation_create_clip → animation/create-clip
  */
 function toolNameToRoute(toolName) {
@@ -55,6 +56,59 @@ const CORE_TOOLS = new Set([
   "unity_editor_ping",
   "unity_editor_state",
   "unity_project_info",
+  
+  // VRseBuilder (common tools for VRSE integration)
+  "unity_vrse_status",
+  // "unity_vrse_login",
+  "unity_vrse_list_projects",
+  "unity_vrse_select_project",
+  "unity_vrse_list_modules",
+  "unity_vrse_open_menu_scene",
+  "unity_vrse_open_module",
+  // "unity_vrse_open_room_manager_config",
+  // "unity_vrse_get_selected_project",
+  // "unity_vrse_get_project_config",
+  // "unity_vrse_ensure_project_settings",
+  "unity_vrse_apply_project_settings",
+  // "unity_vrse_open_studio_project_window",
+  // "unity_vrse_open_project_config_window",
+  // "unity_vrse_open_build_tool",
+  "unity_vrse_create_experience",
+  "unity_vrse_get_experience_creation_status",
+  // "unity_vrse_open_art_scene",
+  "unity_vrse_story_add_trigger_set",
+  "unity_vrse_story_add_action",
+  "unity_vrse_story_update_node",
+  "unity_vrse_story_save",
+  // "unity_vrse_story_validate",
+  "unity_vrse_story_remove_node_by_name",
+  // "unity_vrse_apply_moment_weightage",
+  "unity_vrse_story_has_pending_vo",
+  // "unity_vrse_create_evaluation_from_training",
+  "unity_vrse_story_read",
+  "unity_vrse_story_list_node_templates",
+  "unity_vrse_query_objects_list",
+  "unity_vrse_story_add_chapter",
+  "unity_vrse_story_add_moment",
+  "unity_vrse_story_rename_chapter",
+  "unity_vrse_story_rename_moment",
+  "unity_vrse_story_remove_chapter",
+  "unity_vrse_story_remove_moment",
+  "unity_vrse_story_remove_action",
+  "unity_vrse_story_move_action",
+  "unity_vrse_story_duplicate_action",
+  "unity_vrse_story_apply_action_to_multiple_moments",
+  "unity_vrse_story_defaults_get",
+  // "unity_vrse_building_blocks_list",
+  // "unity_vrse_building_blocks_instantiate",
+  "unity_vrse_scene_hierarchy_checkup",
+  "unity_vrse_module_set_include_in_build",
+  "unity_vrse_build_start",
+  // "unity_vrse_build_status",
+  "unity_vrse_story_search_node_templates",
+  "unity_vrse_story_generate_vo",
+  "unity_list_conversion_tools",
+  "unity_conversion_tool",
 
   // Scene management
   "unity_scene_info",
@@ -84,7 +138,7 @@ const CORE_TOOLS = new Set([
 
   // Asset management
   "unity_asset_list",
-  "unity_asset_import",
+  // "unity_asset_import",
   "unity_asset_delete",
   "unity_asset_create_prefab",
   "unity_asset_instantiate_prefab",
@@ -105,7 +159,7 @@ const CORE_TOOLS = new Set([
 
   // Console & Compilation
   "unity_console_log",
-  "unity_console_clear",
+  // "unity_console_clear",
   "unity_get_compilation_errors",
 
   // Editor actions
@@ -137,32 +191,54 @@ const CORE_TOOLS = new Set([
   "unity_set_object_reference",
 
   // Packages
-  "unity_packages_list",
-  "unity_packages_add",
-  "unity_packages_remove",
-  "unity_packages_search",
-  "unity_packages_info",
+  // "unity_packages_list",
+  // "unity_packages_add",
+  // "unity_packages_remove",
+  // "unity_packages_search",
+  // "unity_packages_info",
 
   // Queue & agents
   "unity_queue_info",
   "unity_agents_list",
   "unity_agent_log",
+
+  // Meta-tools for Infinity Workshop & Rotator tools
+  "unity_list_infinity_tools",
+  "unity_infinity_tool",
+  "vrse_list_rotator_tools",
+  "vrse_rotator_create_from_prefab",
+
+  // Meta-tools for PhysicalButton (poke button) creation
+  "vrse_list_physicalbutton_tools",
+  "vrse_physicalbutton_dispatch",
 ]);
 
 /**
  * Split a flat tool array into { core, advanced }.
  * Also generates the meta-tools for accessing advanced tools.
+ * @param {Array} allEditorTools - All editor tool definitions
+ * @param {Object} options - Optional tool arrays for specialized categories
+ * @param {Array} options.infinityTools - Infinity Workshop tools (hidden behind meta-tool)
+ * @param {Array} options.rotatorTools - Rotator mesh/physics tools (hidden behind meta-tool)
  */
-export function splitToolTiers(allEditorTools) {
+export function splitToolTiers(allEditorTools, { infinityTools = [], rotatorTools = [], buttonTools = [], storyTools = [] } = {}) {
   const core = [];
   const advanced = [];
+  const conversions = [];
 
   for (const tool of allEditorTools) {
-    if (CORE_TOOLS.has(tool.name)) {
+    if (tool.name.includes("_convert_") || tool.name === "vrse_create_placepoint") {
+      conversions.push(tool);
+    } else if (CORE_TOOLS.has(tool.name)) {
       core.push(tool);
     } else {
       advanced.push(tool);
     }
+  }
+
+  const conversionMap = new Map();
+  for (const t of conversions) {
+    conversionMap.set(t.name, t);
   }
 
   // Build an index of advanced tools for the catalog
@@ -194,8 +270,8 @@ export function splitToolTiers(allEditorTools) {
     description:
       "List all available advanced/specialized Unity tools organized by category. " +
       "These tools are not directly exposed but can be called via unity_advanced_tool. " +
-      "Categories include: uma, animation, prefab, physics, lighting, audio, shadergraph, " +
-      "amplify, terrain, particle, navmesh, ui, texture, profiler, memory, settings, " +
+      "Categories include: animation, prefab, physics, lighting, audio, " +
+      "particle, ui, texture, profiler, memory, settings, " +
       "input, asmdef, scriptableobject, constraint, lod, editorprefs, playerprefs, " +
       "vfx, graphics, sceneview, and more.",
     inputSchema: {
@@ -204,7 +280,7 @@ export function splitToolTiers(allEditorTools) {
         category: {
           type: "string",
           description:
-            'Filter by category name (e.g. "animation", "prefab", "shadergraph"). Omit for full list.',
+            'Filter by category name (e.g. "animation", "prefab"). Omit for full list.',
         },
       },
     },
@@ -224,7 +300,7 @@ export function splitToolTiers(allEditorTools) {
 
       if (dynamicRoutes && dynamicRoutes.routes) {
         for (const route of dynamicRoutes.routes) {
-          // Convert route to tool name: terrain/list → unity_terrain_list
+          // Convert route to tool name: prefab/open → unity_prefab_open
           const toolName = "unity_" + route.replace(/\//g, "_").replace(/-/g, "_");
           const cat = route.split("/")[0];
 
@@ -287,7 +363,7 @@ export function splitToolTiers(allEditorTools) {
     description:
       "Execute an advanced/specialized Unity tool by name. Use unity_list_advanced_tools " +
       "to discover available tools and their parameters. This provides access to 200+ " +
-      "specialized tools for animation, prefabs, physics, shaders, terrain, particles, " +
+      "specialized tools for animation, prefabs, physics, particles, " +
       "UI, profiling, and more.",
     inputSchema: {
       type: "object",
@@ -295,7 +371,7 @@ export function splitToolTiers(allEditorTools) {
         tool: {
           type: "string",
           description:
-            'The tool name to execute (e.g. "unity_animation_create_controller", "unity_shadergraph_create")',
+            'The tool name to execute (e.g. "unity_animation_create_controller", "unity_prefab_open"). Use unity_list_advanced_tools to see available tools.',
         },
         params: {
           type: "object",
@@ -322,7 +398,7 @@ export function splitToolTiers(allEditorTools) {
       const route = toolNameToRoute(tool);
       if (route) {
         try {
-          console.debug(`[MCP] Lazy-loading tool "${tool}" via route "${route}"`);
+          debugLog(`[MCP] Lazy-loading tool "${tool}" via route "${route}"`);
           const result = await sendCommand(route, params || {});
           return JSON.stringify(result, null, 2);
         } catch (err) {
@@ -334,9 +410,265 @@ export function splitToolTiers(allEditorTools) {
     },
   };
 
+  const conversionTool = {
+    name: "unity_conversion_tool",
+    description:
+      "Execute a VRse conversion tool by name. Use unity_list_conversion_tools " +
+      "to discover available tools for converting scene objects to interactables.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description:
+            'The conversion tool name (e.g. "unity_vrse_convert_to_grabbable").',
+        },
+        params: {
+          type: "object",
+          description: "Parameters for the conversion tool.",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params } = {}) => {
+      const target = conversionMap.get(tool);
+      if (target) return await target.handler(params || {});
+      return `Error: Unknown conversion tool "${tool}". Use unity_list_conversion_tools to see available tools.`;
+    },
+  };
+
+  const listConversionTools = {
+    name: "unity_list_conversion_tools",
+    description: "List all available VRse interactable conversion tools and their schemas.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      return JSON.stringify(
+        conversions.map((t) => ({ name: t.name, description: t.description })),
+        null,
+        2
+      );
+    },
+  };
+
+  // ─── Infinity Workshop meta-tools ───
+  const infinityMap = new Map();
+  for (const t of infinityTools) {
+    infinityMap.set(t.name, t);
+  }
+
+  const listInfinityTools = {
+    name: "unity_list_infinity_tools",
+    description:
+      "List all available Infinity Workshop tools for searching, downloading, and placing 3D assets from the cloud. " +
+      "These tools are not directly exposed but can be called via unity_infinity_tool. " +
+      "Categories: lifecycle (status, initialize), discovery (list/search assets), " +
+      "download (by ID, by query, poll status), placement (add to scene, smart place, batch place, download+place).",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      return JSON.stringify(
+        infinityTools.map((t) => ({ name: t.name, description: t.description })),
+        null,
+        2
+      );
+    },
+  };
+
+  const infinityTool = {
+    name: "unity_infinity_tool",
+    description:
+      "Execute an Infinity Workshop tool by name. Use unity_list_infinity_tools " +
+      "to discover available tools and their parameters. Provides access to asset " +
+      "searching, downloading, and smart scene placement from the Infinity Workshop cloud.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description:
+            'The infinity tool name to execute (e.g. "vrse_infinity_status", "vrse_infinity_list_assets"). ' +
+            'Use unity_list_infinity_tools to see available tools.',
+        },
+        params: {
+          type: "object",
+          description: "Parameters to pass to the tool.",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params } = {}) => {
+      if (!tool) {
+        return "Error: 'tool' parameter is required. Use unity_list_infinity_tools to see available tools.";
+      }
+      const target = infinityMap.get(tool);
+      if (target) return await target.handler(params || {});
+      return `Error: Unknown infinity tool "${tool}". Use unity_list_infinity_tools to see available tools.`;
+    },
+  };
+
+  // ─── Rotator meta-tools (mesh analysis, PivotRotateLimiter creation) ───
+  const rotatorToolMap = new Map();
+  for (const t of rotatorTools) {
+    rotatorToolMap.set(t.name, t);
+  }
+
+  const listRotatorTools = {
+    name: "vrse_list_rotator_tools",
+    description:
+      "List all available rotator tools (mesh analysis + PivotRotateLimiter creation). " +
+      "These are heuristic-based tools for creating physical interactables like hinges, levers, and rotating doors. " +
+      "Two-tool AI flow: (1) analyze mesh data, (2) create with AI-determined parameters.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      return JSON.stringify(
+        rotatorTools.map((t) => ({ name: t.name, description: t.description })),
+        null,
+        2
+      );
+    },
+  };
+
+  const rotatorTool = {
+    name: "vrse_rotator_create_from_prefab",
+    description:
+      "Execute a rotator tool by name. Use vrse_list_rotator_tools " +
+      "to discover available tools. Provides access to mesh analysis for hinge detection " +
+      "and PivotRotateLimiter creation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description:
+            'The rotator tool name (e.g. "vrse_rotator_analyze_mesh", "vrse_rotator_create_from_prefab"). ' +
+            'Use vrse_list_rotator_tools to see available tools.',
+        },
+        params: {
+          type: "object",
+          description: "Parameters to pass to the tool.",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params } = {}) => {
+      if (!tool) {
+        return "Error: 'tool' parameter is required. Use vrse_list_rotator_tools to see available tools.";
+      }
+      const target = rotatorToolMap.get(tool);
+      if (target) return await target.handler(params || {});
+      return `Error: Unknown rotator tool "${tool}". Use vrse_list_rotator_tools to see available tools.`;
+    },
+  };
+
+  // ─── PhysicalButton meta-tools (convert meshes to poke buttons) ───
+  const buttonMap = new Map();
+  for (const t of buttonTools) {
+    buttonMap.set(t.name, t);
+  }
+
+  const listButtonTools = {
+    name: "vrse_list_physicalbutton_tools",
+    description:
+      "List all available Physical (poke) Button tools for converting scene meshes into pushable buttons. " +
+      "Two-tool AI flow: (1) vrse_button_analyze_mesh to inspect the mesh, (2) vrse_button_create_from_prefab " +
+      "to build the button(s) from the PhysicalButton_Block prefab. Call this first to discover names + schemas, " +
+      "then run them via vrse_physicalbutton_dispatch.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      return JSON.stringify(
+        buttonTools.map((t) => ({ name: t.name, description: t.description })),
+        null,
+        2
+      );
+    },
+  };
+
+  const buttonDispatch = {
+    name: "vrse_physicalbutton_dispatch",
+    description:
+      "Execute a Physical Button tool by name. Use vrse_list_physicalbutton_tools to discover available tools " +
+      "and their parameters (vrse_button_analyze_mesh, vrse_button_create_from_prefab).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description:
+            'The button tool name (e.g. "vrse_button_analyze_mesh", "vrse_button_create_from_prefab"). ' +
+            "Use vrse_list_physicalbutton_tools to see available tools.",
+        },
+        params: {
+          type: "object",
+          description: "Parameters to pass to the tool.",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params } = {}) => {
+      if (!tool) {
+        return "Error: 'tool' parameter is required. Use vrse_list_physicalbutton_tools to see available tools.";
+      }
+      const target = buttonMap.get(tool);
+      if (target) return await target.handler(params || {});
+      return `Error: Unknown button tool "${tool}". Use vrse_list_physicalbutton_tools to see available tools.`;
+    },
+  };
+
+  // ─── Story meta-tools (hide the 29 granular story tools behind a dispatcher) ───
+  const storyMap = new Map();
+  for (const t of storyTools) storyMap.set(t.name, t);
+
+  const listStoryTools = {
+    name: "vrse_list_story_tools",
+    description:
+      "List the granular story-authoring tools (add/remove chapter·moment, add/update/remove/move/duplicate " +
+      "nodes, trigger sets, weightage, raw apply/patch/undo, VO, validate, read/info/defaults/templates/objects). " +
+      "These are hidden from the main tool list and executed via vrse_story_tool. Prefer the consolidated tools " +
+      "(vrse_story_inspect / vrse_story_edit / vrse_story_apply) for most story work.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () =>
+      JSON.stringify(storyTools.map((t) => ({ name: t.name, description: t.description })), null, 2),
+  };
+
+  const storyTool = {
+    name: "vrse_story_tool",
+    description:
+      "Execute a granular story tool by name (the pre-consolidation unity_vrse_story_* / vrse_*_story_* set). " +
+      "Use vrse_list_story_tools to discover names + parameters. Prefer vrse_story_inspect / vrse_story_edit / " +
+      "vrse_story_apply unless you specifically need one granular operation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: { type: "string", description: 'The story tool name to execute (e.g. "unity_vrse_story_add_action").' },
+        params: { type: "object", description: "Parameters to pass to the tool.", additionalProperties: true },
+        port: { type: "number", description: "Target Unity instance port (forwarded to the dispatched tool)." },
+      },
+      required: ["tool"],
+    },
+    handler: async ({ tool, params, port } = {}) => {
+      if (!tool) return "Error: 'tool' parameter is required. Use vrse_list_story_tools to see available tools.";
+      const target = storyMap.get(tool);
+      if (target) return await target.handler({ ...(params || {}), ...(port !== undefined ? { port } : {}) });
+      return `Error: Unknown story tool "${tool}". Use vrse_list_story_tools to see available tools.`;
+    },
+  };
+
+  const metaTools = [
+    catalogTool, advancedTool,
+    conversionTool, listConversionTools,
+    listInfinityTools, infinityTool,
+    listRotatorTools, rotatorTool,
+    listButtonTools, buttonDispatch,
+    listStoryTools, storyTool,
+  ];
+
   return {
     coreTools: core,
-    metaTools: [catalogTool, advancedTool],
+    advancedTools: advanced,
+    metaTools,
     advancedCount: advanced.length,
     coreCount: core.length,
   };

@@ -1,7 +1,7 @@
 {
   "name": "unity-mcp-server",
-  "version": "2.27.0",
-  "description": "Unity MCP Server — Multi-agent MCP server for Unity Editor, designed for Claude Cowork. By AnkleBreaker Studio.",
+  "version": "2.26.0",
+  "description": "Unity MCP Server — Multi-agent MCP server for Unity Editor, designed for Claude Cowork. By AutoVRse.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -10,7 +10,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "pack": "npx @anthropic-ai/mcpb pack . unity-mcp.mcpb && npx @anthropic-ai/mcpb clean unity-mcp.mcpb"
+    "pack": "npx @anthropic-ai/mcpb pack . unity-mcp.mcpb && npx @anthropic-ai/mcpb clean unity-mcp.mcpb",
+    "prepare": "node scripts/setup-skills.js",
+    "skills:sync": "node scripts/setup-skills.js",
+    "skills:reconcile": "node scripts/setup-skills.js --reconcile",
+    "skills:check": "node scripts/setup-skills.js --check"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"

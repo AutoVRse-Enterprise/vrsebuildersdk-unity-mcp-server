@@ -1,4 +1,4 @@
-// AnkleBreaker Unity MCP — Configuration
+// VRseBuilder Unity MCP — Configuration
 // Adjust these paths to match your Unity installation
 
 import { homedir } from "os";
