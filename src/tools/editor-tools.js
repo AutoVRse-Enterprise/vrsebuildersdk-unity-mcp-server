@@ -31,6 +31,19 @@ export const editorTools = [
     handler: async () => JSON.stringify(await bridge.sendCommand("vrse/list-projects", {}), null, 2),
   },
   {
+    name: "unity_vrse_create_project",
+    description: "Create a local VRseBuilder project with ProjectConfig, RoomManagerConfig, and BrandManagerConfig assets.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "New project name. It becomes Assets/StudioProjects/<name>." },
+        confirm: { type: "boolean", description: "Must be true to create project assets." }
+      },
+      required: ["name", "confirm"]
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/create-project", params), null, 2),
+  },
+  {
     name: "unity_vrse_select_project",
     description: "Select the active VRseBuilder project by name or backend project ID.",
     inputSchema: {
@@ -63,6 +76,19 @@ export const editorTools = [
       }
     },
     handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/open-menu-scene", params), null, 2),
+  },
+  {
+    name: "unity_vrse_create_menu_scene",
+    description: "Create or assign the default VRseBuilder menu scene for the selected project, then optionally apply project settings.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: { type: "string", description: "Optional project name override" },
+        overwrite: { type: "boolean", description: "Replace the managed menu scene contents if it already exists. Default false." },
+        applySettings: { type: "boolean", description: "Apply project settings after assigning the menu scene. Default true." }
+      }
+    },
+    handler: async (params) => JSON.stringify(await bridge.sendCommand("vrse/create-menu-scene", params), null, 2),
   },
   {
     name: "unity_vrse_open_module",
